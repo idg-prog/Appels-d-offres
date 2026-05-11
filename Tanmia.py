@@ -74,22 +74,32 @@ def analyze_with_ollama(tender_title, extracted_text):
     context_text = extracted_text[:7000] 
 
     prompt = f"""
-    Tu es un expert en lecture d'appels d'offres marocains. 
-    Analyse le texte et extrais les données suivantes.
+    Tu es un Expert Senior en Ingénierie des Marchés Publics Marocains. Ton rôle est d'extraire une fiche technique décisionnelle à partir de documents complexes.
     
-    ATTENTION PARTICULIÈRE :
-    - Le BUDGET est souvent à la fin du document sous 'Budget prévu' ou 'Traitement économique'. 
-    - Cherche les montants suivis de 'MAD', 'DH', ou 'Dirhams'. 
-    - Si tu vois un chiffre comme '4800 MAD', c'est le budget.
-    - La CAUTION est souvent nommée 'Caution provisoire'.
-
-    RETOURNE UNIQUEMENT UN OBJET JSON avec ces clés :
-    - client: Nom de l'organisme
-    - ville: Ville mentionnée
-    - budget: Le montant exact (ex: '4800 MAD')
-    - caution: Montant de la caution (ou 'Non mentionnée')
-    - date_limite: Date finale de soumission
-    - what_they_want: Résumé d'une phrase.
+    --- RÈGLES D'OR ---
+    1. ANALYSE FINANCIÈRE : Priorité absolue sur le BUDGET. Cherche "MAD", "DH", "TTC", "Estimation". Vérifie les sections "Traitement économique" ou "Dispositions financières".
+    2. ANALYSE OPÉRATIONNELLE : Explique le WHAT (Quoi) et le HOW (Comment : méthodologie, livrables, approche).
+    
+    --- CLASSIFICATION PAR SECTEUR ---
+    Tu dois impérativement classer l'offre dans l'UN de ces 20 secteurs :
+    1. Formation & Coaching | 2. Recrutement & RH | 3. Études & Conseil | 4. Audit & Expertise Comptable | 5. Informatique & Digital | 6. Communication & Événementiel | 7. Travaux de Bâtiment | 8. Génie Civil & Routes | 9. Installations Électriques | 10. Plomberie & Chauffage | 11. Achat de Fournitures de Bureau | 12. Mobilier & Aménagement | 13. Matériel Médical | 14. Nettoyage & Gardiennage | 15. Espaces Verts | 16. Transport & Logistique | 17. Restauration & Catering | 18. Maintenance Technique | 19. Énergies Renouvelables | 20. Gardiennage & Sécurité | 21. Archivage.
+    
+    --- FORMAT DE SORTIE IMPÉRATIF ---
+    
+    CLIENT : [Nom de l'organisme]
+    VILLE : [Ville et Région]
+    BUDGET : [Valeur exacte 'Non mentionnée' ]
+    CAUTION : [Montant ou 'Non mentionnée']
+    DATE LIMITE : [Date et Heure]
+    
+    SECTEUR : [Choisis parmi la liste des 21 secteurs ci-dessus]
+    
+    CE QU'ILS VEULENT (WHAT) : 
+    [Minimum 2 phrases : Objectif concret, quantités, volume, nature de la mission.]
+    
+    COMMENT ILS LE VEULENT (HOW) : 
+    [Minimum 2 phrases : Méthodologie imposée, livrables attendus, approche technique, contraintes de réalisation.]
+    ---------------------------------------------------------
 
     DOCUMENT :
     TITRE: {tender_title}
