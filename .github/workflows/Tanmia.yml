@@ -1,60 +1,51 @@
-name: Run Tanmia Scraper (Daily + Manual)
+name: Run Tanmia Scraper with local Ollama
 
 on:
-  # Manual trigger
   workflow_dispatch:
-
-  # Scheduled trigger — 6:00 AM GMT+1 daily
   schedule:
-   - cron: '0 5 * * *'  # Runs at 05:00 UTC = 06:00 GMT+1
+    - cron: '0 5 * * *'
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
 
     steps:
-      # ------------------------
-      # Checkout repository
-      # ------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ------------------------
-      # Set up Python
-      # ------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      # ------------------------
-      # Install system dependencies (Tesseract + Poppler)
-      # ------------------------
+      # --- NEW: Install Ollama ---
+      - name: Install Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+
+      # --- NEW: Start Ollama & Pull Model ---
+      # We run 'serve' in the background and wait a few seconds for it to wake up
+      - name: Start Ollama Server
+        run: |
+          ollama serve > ollama.log 2>&1 &
+          sleep 5
+          ollama pull llama3.2
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y tesseract-ocr libtesseract-dev poppler-utils
           sudo apt-get install -y tesseract-ocr-fra tesseract-ocr-ara tesseract-ocr-eng
 
-      # ------------------------
-      # Install Python dependencies
-      # ------------------------
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ------------------------
-      # Run scraper
-      # ------------------------
       - name: Run Tanmia Scraper
         run: python scripts/Tanmia.py
-        env:
-          N8N_WEBHOOK_URL: ${{ secrets.N8N_WEBHOOK_URL }}
+        # No more N8N_WEBHOOK_URL needed unless you still want to send results there
 
-      # ------------------------
-      # Upload results as artifact
-      # ------------------------
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
