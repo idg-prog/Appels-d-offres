@@ -9,8 +9,7 @@ import fitz  # PyMuPDF
 from docx import Document
 from bs4 import BeautifulSoup as bs
 import PyPDF2
-from datetime import datetime
-import re
+from datetime import datetime, timedeltaimport re
 import unicodedata
 import json
 import ollama
