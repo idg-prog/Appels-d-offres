@@ -26,9 +26,10 @@ MONTHS_FR = ["janvier","février","mars","avril","mai","juin","juillet",
              "août","septembre","octobre","novembre","décembre"]
 
 # --- GESTION DES DATES ---
-today = datetime.now()
+# Setting target to yesterday for the scraper logic
+today = datetime.now() - timedelta(days=1)
 TARGET_DATE_STR = f"{today.day} {MONTHS_FR[today.month-1]} {today.year}"
-print(f"📅 Recherche des offres du : {TARGET_DATE_STR}")
+print(f"📅 Target date for scraping: {TARGET_DATE_STR}")
 
 # --- FONCTIONS DE NETTOYAGE ET EXTRACTION ---
 
