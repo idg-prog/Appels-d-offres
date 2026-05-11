@@ -25,3 +25,5 @@ ollama>=0.1.0
 
 # App Interface
 streamlit>=1.30.0
+urllib3<2.0.0
+unidecode
