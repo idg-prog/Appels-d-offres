@@ -43,7 +43,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Tanmia Scraper
-        run: python scripts/Tanmia.py
+        run: python Tanmia.py
         # No more N8N_WEBHOOK_URL needed unless you still want to send results there
 
       - name: Upload results
