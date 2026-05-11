@@ -23,13 +23,14 @@ jobs:
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
 
-      # --- NEW: Start Ollama & Pull Model ---
+      # --- NEW: Start Ollama & Pull Model ---   ollama pull llama3.2
       # We run 'serve' in the background and wait a few seconds for it to wake up
       - name: Start Ollama Server
         run: |
           ollama serve > ollama.log 2>&1 &
           sleep 5
-          ollama pull llama3.2
+          
+          ollama pull qwen2.5
 
       - name: Install system dependencies
         run: |
