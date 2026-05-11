@@ -1,14 +1,14 @@
-name: Run Selenium MP
+name: Run Selenium MP Scraper
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 2 * * *' # 5:00 AM UTC every day
+    - cron: '0 5 * * *'
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 60 # Selenium + OCR + AI takes time
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -19,16 +19,13 @@ jobs:
         with:
           python-version: "3.10"
 
-      # --- 1. Install Chrome & Chromedriver ---
+      # --- 1. Install Google Chrome ---
       - name: Setup Chrome
         uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: stable
-      
-      - name: Setup Chromedriver
-        uses: browser-actions/setup-chromedriver@v1
 
-      # --- 2. Install System Dependencies (OCR & PDF) ---
+      # --- 2. Install System Tools (OCR, PDF, Word) ---
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -40,7 +37,7 @@ jobs:
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
 
-      # --- 4. Start Ollama & Pull Qwen ---
+      # --- 4. Start Ollama Server & Pull Qwen ---
       - name: Start Ollama Server
         run: |
           ollama serve > ollama.log 2>&1 &
@@ -55,26 +52,27 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
+          # Including webdriver-manager here ensures the Selenium setup works
           pip install pandas requests pymupdf pytesseract pillow python-docx \
-            PyPDF2 ollama beautifulsoup4 selenium pdf2image
+            PyPDF2 ollama beautifulsoup4 selenium pdf2image webdriver-manager
 
-      # --- 6. Run Scraper ---
-      - name: Run Selenium Scraper
-        # Ensure your python file is named 'Tanmia.py'
+      # --- 6. Run the Scraper ---
+      - name: Run Scraper
+        # Make sure your script name matches exactly
         run: python Mp.py
 
-      # --- 7. Upload & Save CSV ---
-      - name: Upload results as Artifact
+      # --- 7. Upload Results ---
+      - name: Upload CSV Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: scraper-csv-results
+          name: scraper-results
           path: tender_results_summary.csv
 
-      - name: Commit and Push CSV to Repo
+      # --- 8. Save results to GitHub ---
+      - name: Commit and Push
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add tender_results_summary.csv
-          # Only commit if the file changed
-          git commit -m "📊 Daily AO Update: $(date +'%Y-%m-%d')" || echo "No changes to commit"
+          git commit -m "📊 Daily Scrape Update: $(date +'%Y-%m-%d')" || echo "No changes"
           git push
