@@ -48,7 +48,6 @@ def extract_text_by_type(file_bytes, filename):
                 for page in reader.pages:
                     text += page.extract_text() or ""
             if not text.strip():
-                # OCR Fallback
                 pdf_doc = fitz.open(stream=file_bytes, filetype="pdf")
                 for page in pdf_doc:
                     pix = page.get_pixmap(dpi=300)
@@ -64,15 +63,13 @@ def extract_text_by_type(file_bytes, filename):
         print(f"❌ Extraction error on {filename}: {e}")
     return clean_text(text)
 
-# --- OLLAMA INTEGRATION (FIXED PROMPT) ---
+# --- OLLAMA INTEGRATION ---
 
 def analyze_with_ollama(tender_title, extracted_text):
-    """Refined prompt to ensure budget is captured correctly."""
     print(f"🧠 [AI] Analyzing: {tender_title[:50]}...")
-    
-    # Increase context slightly to 7000 to ensure we reach the 'Budget' section at the end
-    context_text = extracted_text[:7000] 
+    context_text = extracted_text[:8000] 
 
+    # We removed 'format=json' from the chat call to allow the detailed text response
     prompt = f"""
     Tu es un Expert Senior en Ingénierie des Marchés Publics Marocains. Ton rôle est d'extraire une fiche technique décisionnelle à partir de documents complexes.
     
@@ -101,22 +98,27 @@ def analyze_with_ollama(tender_title, extracted_text):
     [Minimum 2 phrases : Méthodologie imposée, livrables attendus, approche technique, contraintes de réalisation.]
     ---------------------------------------------------------
 
-    DOCUMENT :
     TITRE: {tender_title}
-    CONTENU DU DOCUMENT:
-    {context_text}
+    CONTENU: {context_text}
     """
 
     try:
         response = ollama.chat(
             model=MODEL_NAME,
-            messages=[{'role': 'user', 'content': prompt}],
-            format='json'
+            messages=[{'role': 'user', 'content': prompt}]
         )
-        return json.loads(response['message']['content'])
+        content = response['message']['content']
+        
+        # Parse the text response into a dictionary
+        data = {}
+        for line in content.split('\n'):
+            if ':' in line:
+                key, val = line.split(':', 1)
+                data[key.strip().upper()] = val.strip()
+        return data
     except Exception as e:
         print(f"❌ AI Error: {e}")
-        return {"client": "N/A", "ville": "N/A", "budget": "N/A", "caution": "N/A", "date_limite": "N/A", "what_they_want": "N/A"}
+        return {}
 
 # --- SCRAPER ---
 
@@ -153,27 +155,27 @@ for page_num in range(1, 3):
                 att_resp = requests.get(att_url)
                 if att_resp.status_code == 200:
                     full_tender_text += extract_text_by_type(att_resp.content, att_url) + "\n"
-            except:
-                continue
+            except: continue
 
         ai_data = analyze_with_ollama(title, full_tender_text)
 
+        # UPDATED: Mapping the new detailed fields to your results
         results.append({
-            "object": title,
-            "link": article_url,
-            "date limite": ai_data.get("date_limite"),
-            "date de publication": post_date,
-            "ville": ai_data.get("ville"),
-            "client": ai_data.get("client"),
-            "budget": ai_data.get("budget"),
-            "caution": ai_data.get("caution"),
-            "what they want": ai_data.get("what_they_want")
+            "Organisme": ai_data.get("CLIENT", "N/A"),
+            "Secteur": ai_data.get("SECTEUR", "N/A"),
+            "Objet": title,
+            "Budget": ai_data.get("BUDGET", "N/A"),
+            "Ville": ai_data.get("VILLE", "N/A"),
+            "Caution": ai_data.get("CAUTION", "N/A"),
+            "Date Limite": ai_data.get("DATE LIMITE", "N/A"),
+            "Quoi": ai_data.get("WHAT", "N/A"),
+            "Comment": ai_data.get("HOW", "N/A"),
+            "Lien": article_url
         })
 
 df = pd.DataFrame(results)
 if not df.empty:
     print("\n✅ Extraction Finished!")
-    print(df[['object', 'budget', 'client']]) # Preview key columns
     df.to_csv("results.csv", index=False, encoding='utf-8-sig')
 else:
     print(f"No results for {TARGET_DATE_STR}")
