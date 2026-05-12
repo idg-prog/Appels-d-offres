@@ -6,10 +6,8 @@ import zipfile
 import subprocess
 import traceback
 import unicodedata
-import random
 import requests
 import pandas as pd
-import json
 import ollama
 from datetime import datetime, timedelta
 
@@ -33,7 +31,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 # -----------------------------
 # CONFIGURATION
 # -----------------------------
-# ✅ FIX #1: Model name matches what GitHub Action pulls
 MODEL_NAME = "qwen2.5"
 
 print("🚀 Initializing configuration...")
@@ -57,11 +54,28 @@ options.add_experimental_option("prefs", prefs)
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=options)
 wait = WebDriverWait(driver, 25)
-driver.set_page_load_timeout(40)
+
+# ✅ FIX #3: Increased page load timeout (was 40s — too low for gov portal)
+driver.set_page_load_timeout(90)
 
 PDF_PAGE_LIMIT = 10
-
 yesterday = (datetime.now() - timedelta(days=1)).strftime("%d/%m/%Y")
+
+# ✅ FIX #1: Expanded keyword exclusion list to catch infrastructure/works tenders
+EXCLUDED_KEYWORDS = [
+    # Civil works
+    "construction", "travaux", "réhabilitation", "infrastructure",
+    "aménagement", "voirie", "route", "autoroute", "pont",
+    # Water / electrical networks
+    "conduite", "canalisation", "raccordement", "réseau", "adduction",
+    "assainissement", "électrique", "électrification", "ligne haute tension",
+    # Supplies / equipment
+    "fourniture", "achat", "acquisition", "livraison", "matériel",
+    # Cleaning / maintenance of physical assets
+    "nettoyage", "entretien", "maintenance des bâtiments",
+    # Construction lots
+    "lot", "génie civil", "bâtiment", "plomberie",
+]
 
 
 # -----------------------------
@@ -79,13 +93,7 @@ def clean_extracted_text(text):
 # EXTRACTION HELPERS
 # -----------------------------
 def extract_text_from_pdf(file_path):
-    """
-    ✅ FIX #2: Extract text from PDF with verbose logging.
-    Tries PyMuPDF first, falls back to OCR if text is too short.
-    """
     text = ""
-
-    # Step 1: Try direct text extraction with PyMuPDF
     try:
         doc = fitz.open(file_path)
         page_count = min(len(doc), PDF_PAGE_LIMIT)
@@ -96,7 +104,6 @@ def extract_text_from_pdf(file_path):
     except Exception as e:
         print(f"   ⚠️ PyMuPDF failed on {os.path.basename(file_path)}: {e}")
 
-    # Step 2: OCR fallback if text is too short (scanned/image PDF)
     if len(text.strip()) < 100:
         print(f"   🔍 Text too short, switching to OCR for {os.path.basename(file_path)}...")
         try:
@@ -161,7 +168,8 @@ def clear_download_directory():
             print(f"   ⚠️ Could not delete {path}: {e}")
 
 
-def wait_for_download_complete(timeout=120):
+# ✅ FIX #2: Reduced timeout from 120s to 45s so script doesn't block too long
+def wait_for_download_complete(timeout=45):
     elapsed = 0
     while elapsed < timeout:
         files = [f for f in os.listdir(download_dir) if not f.endswith(".crdownload")]
@@ -179,17 +187,15 @@ def wait_for_download_complete(timeout=120):
 # -----------------------------
 def parse_ai_response(content):
     """
-    ✅ FIX #3: Robust multiline parser using regex with DOTALL.
+    Robust multiline parser using regex with DOTALL.
     Handles bold markers, dashes, and values spanning multiple lines.
     """
     data = {}
     target_keys = ["CLIENT", "VILLE", "BUDGET", "CAUTION", "DATE LIMITE", "SECTEUR", "WHAT", "HOW"]
 
-    # Strip markdown bold/italic markers
     content_clean = re.sub(r'[*_]', '', content)
 
     for i, key in enumerate(target_keys):
-        # Build lookahead: stop at the next key or end of string
         next_keys = target_keys[i + 1:]
         if next_keys:
             lookahead = r'(?=' + '|'.join(re.escape(k) for k in next_keys) + r'\s*:|\Z)'
@@ -200,7 +206,6 @@ def parse_ai_response(content):
         match = re.search(pattern, content_clean, re.IGNORECASE | re.DOTALL)
         if match:
             value = match.group(1).strip()
-            # Clean up leading dashes and collapse newlines
             value = re.sub(r'^[-–—\s]+', '', value)
             value = re.sub(r'\n+', ' ', value).strip()
             if value and value.upper() not in ("N/A", "NON DISPONIBLE", ""):
@@ -213,12 +218,6 @@ def parse_ai_response(content):
 # AI ANALYSIS
 # -----------------------------
 def analyze_with_ollama(tender_title, extracted_text):
-    """
-    Sends text to local Qwen 2.5 and parses the structured result.
-    ✅ FIX #1: Uses correct model name.
-    ✅ FIX #3: Uses robust multiline parser.
-    ✅ FIX #4: Low temperature for factual extraction.
-    """
     print(f"🧠 [AI] Analyzing: {tender_title[:60]}...")
     print(f"   Input text length: {len(extracted_text)} chars")
 
@@ -268,7 +267,7 @@ CONTENU:
         response = ollama.chat(
             model=MODEL_NAME,
             messages=[{'role': 'user', 'content': prompt}],
-            options={"temperature": 0.1}  # ✅ FIX #4: Low temp for consistent factual extraction
+            options={"temperature": 0.1}
         )
         raw_content = response['message']['content']
         print(f"   Raw AI response preview:\n{raw_content[:600]}\n{'---' * 20}")
@@ -283,13 +282,35 @@ CONTENU:
 
 
 # -----------------------------
+# SAFE NAVIGATION HELPER
+# -----------------------------
+def safe_get(url, retries=2):
+    """
+    ✅ FIX #3: Wraps driver.get() to catch TimeoutException without
+    killing the entire run. Returns True if navigation succeeded.
+    """
+    for attempt in range(1, retries + 1):
+        try:
+            driver.get(url)
+            return True
+        except TimeoutException:
+            print(f"   ⚠️ Page load timed out (attempt {attempt}/{retries}): {url[:80]}")
+            if attempt < retries:
+                time.sleep(5)
+    return False
+
+
+# -----------------------------
 # MAIN SCRAPER
 # -----------------------------
 all_final_results = []
 
 try:
     print("\n--- Starting scraping: Portail Marchés Publics ---")
-    driver.get("https://www.marchespublics.gov.ma/index.php?page=entreprise.EntrepriseAdvancedSearch&searchAnnCons")
+
+    # ✅ FIX #3: Wrap initial navigation too
+    if not safe_get("https://www.marchespublics.gov.ma/index.php?page=entreprise.EntrepriseAdvancedSearch&searchAnnCons"):
+        raise RuntimeError("Failed to load search page after retries.")
 
     # Select "Services" activity domain
     wait.until(EC.element_to_be_clickable(
@@ -338,15 +359,35 @@ try:
     df = pd.DataFrame(data_list)
     print(f"   Scraped {len(df)} tenders before filtering")
 
-    # Keyword filter — exclude irrelevant sectors
-    excluded = ["construction", "travaux", "fourniture", "achat", "nettoyage"]
-    df = df[~df['objet'].str.lower().str.contains('|'.join(excluded), na=False)]
+    # ✅ FIX #1: Use expanded exclusion list
+    exclusion_pattern = '|'.join(re.escape(k) for k in EXCLUDED_KEYWORDS)
+    df = df[~df['objet'].str.lower().str.contains(exclusion_pattern, na=False)]
     print(f"   {len(df)} tenders remaining after keyword filter")
 
     # Process each tender
     for idx, row in df.iterrows():
         print(f"\n📂 [{idx + 1}/{len(df)}] AO: {row['reference']} — {row['objet'][:60]}")
-        driver.get(row['url'])
+
+        # ✅ FIX #3: Safe navigation — skip tender if page won't load
+        if not safe_get(row['url']):
+            print(f"   ❌ Could not load tender page — saving partial result and skipping.")
+            all_final_results.append({
+                "Date Publication": yesterday,
+                "Reference":        row['reference'],
+                "Organisme":        row['acheteur'],
+                "Secteur":          "N/A",
+                "Objet":            row['objet'],
+                "Budget":           "N/A",
+                "Ville":            "N/A",
+                "Caution":          "N/A",
+                "Date Limite":      "N/A",
+                "Nature (WHAT)":    "N/A",
+                "Methode (HOW)":    "N/A",
+                "Lien AO":          row['url'],
+            })
+            clear_download_directory()
+            continue
+
         merged_text = ""
 
         try:
@@ -366,7 +407,8 @@ try:
                 (By.ID, "ctl0_CONTENU_PAGE_EntrepriseDownloadDce_completeDownload")
             )).click()
 
-            downloaded = wait_for_download_complete()
+            # ✅ FIX #2: 45s download timeout (was 120s)
+            downloaded = wait_for_download_complete(timeout=45)
 
             if downloaded:
                 paths = []
@@ -397,15 +439,12 @@ try:
             else:
                 print("   ⚠️ No file downloaded within timeout.")
 
-            # ✅ FIX #2: Warn explicitly when text is empty before AI call
             if len(merged_text.strip()) < 50:
                 print("   ⚠️ Very little text extracted — AI results may be incomplete.")
 
             # AI Analysis
             ai_info = analyze_with_ollama(row['objet'], merged_text)
 
-            # Build result row
-            # ✅ Fallback: use scraped 'acheteur' if AI didn't find CLIENT
             all_final_results.append({
                 "Date Publication": yesterday,
                 "Reference":        row['reference'],
@@ -424,7 +463,7 @@ try:
         except Exception as e:
             print(f"   ⚠️ Failed processing AO {row['reference']}: {e}")
             traceback.print_exc()
-            # Still save what we have from scraping, don't lose the row
+            # Save partial row so we don't lose it
             all_final_results.append({
                 "Date Publication": yesterday,
                 "Reference":        row['reference'],
