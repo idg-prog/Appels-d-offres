@@ -1,14 +1,12 @@
-name: Run Tanmia Scraper with local Ollama
-
+name: Run Tanmia Scraper
 on:
   workflow_dispatch:
   schedule:
     - cron: '0 5 * * *'
-
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,37 +16,31 @@ jobs:
         with:
           python-version: "3.10"
 
-      # --- NEW: Install Ollama ---
-      - name: Install Ollama
-        run: |
-          curl -fsSL https://ollama.com/install.sh | sh
-
-      # --- NEW: Start Ollama & Pull Model ---   ollama pull llama3.2
-      # We run 'serve' in the background and wait a few seconds for it to wake up
-      - name: Start Ollama Server
-        run: |
-          ollama serve > ollama.log 2>&1 &
-          sleep 5
-          
-          ollama pull qwen2.5
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y tesseract-ocr libtesseract-dev poppler-utils
-          sudo apt-get install -y tesseract-ocr-fra tesseract-ocr-ara tesseract-ocr-eng
+          sudo apt-get install -y tesseract-ocr libtesseract-dev poppler-utils \
+            tesseract-ocr-fra tesseract-ocr-ara tesseract-ocr-eng
 
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install pandas requests pymupdf pytesseract pillow \
+            python-docx PyPDF2 beautifulsoup4
 
       - name: Run Tanmia Scraper
         run: python Tanmia.py
-        # No more N8N_WEBHOOK_URL needed unless you still want to send results there
 
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
           name: tanmia-scraper-results
           path: results.csv
+
+      - name: Commit and Push
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add results.csv
+          git commit -m "📊 Daily Tanmia Scrape: $(date +'%Y-%m-%d')" || echo "No changes"
+          git push
