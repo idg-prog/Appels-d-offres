@@ -2,52 +2,53 @@ name: Run Tanmia Scraper
 on:
   workflow_dispatch:
   schedule:
+    # Runs at 05:00 UTC every day
     - cron: '0 5 * * *'
 
-# ✅ FIX: Grant write permission so git push works
+# Grant write permission so the bot can push the CSV back to the repo
 permissions:
   contents: write
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # OCR is heavy; 60 minutes is safe for a few pages
+    timeout-minutes: 60 
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr \
+            tesseract-ocr-fra tesseract-ocr-ara tesseract-ocr-eng
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y tesseract-ocr libtesseract-dev poppler-utils \
-            tesseract-ocr-fra tesseract-ocr-ara tesseract-ocr-eng
-
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
-          pip install pandas requests pymupdf pytesseract pillow \
-            python-docx PyPDF2 beautifulsoup4
+          pip install pandas requests pymupdf pytesseract pillow python-docx beautifulsoup4
 
       - name: Run Tanmia Scraper
         run: python Tanmia.py
 
-      - name: Upload results
+      - name: Upload result as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tanmia-scraper-results
+          name: daily-tanmia-results
           path: results.csv
 
-      - name: Commit and Push
+      - name: Commit and Push CSV
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add results.csv
-          git commit -m "📊 Daily Tanmia Scrape: $(date +'%Y-%m-%d')" || echo "No changes"
+          # The '|| exit 0' prevents the action from failing if there are no new tenders
+          git commit -m "📊 Daily Scrape: $(date +'%Y-%m-%d')" || exit 0
           git push
