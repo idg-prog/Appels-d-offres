@@ -1,15 +1,12 @@
 name: Run Selenium MP Scraper
-
 on:
   workflow_dispatch:
   schedule:
     - cron: '0 5 * * *'
-
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-
+    timeout-minutes: 180
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,60 +16,36 @@ jobs:
         with:
           python-version: "3.10"
 
-      # --- 1. Install Google Chrome ---
       - name: Setup Chrome
         uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: stable
 
-      # --- 2. Install System Tools (OCR, PDF, Word) ---
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y tesseract-ocr tesseract-ocr-fra tesseract-ocr-ara \
             libtesseract-dev poppler-utils antiword
 
-      # --- 3. Install Ollama ---
-      - name: Install Ollama
-        run: |
-          curl -fsSL https://ollama.com/install.sh | sh
-
-      # --- 4. Start Ollama Server & Pull Qwen ---
-      - name: Start Ollama Server
-        run: |
-          ollama serve > ollama.log 2>&1 &
-          until curl -s localhost:11434/api/tags > /dev/null; do
-            echo "Waiting for Ollama server..."
-            sleep 5
-          done
-          echo "Pulling Qwen 2.5 (7B)..."
-          ollama pull qwen2.5
-
-      # --- 5. Install Python Libraries ---
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
-          # Including webdriver-manager here ensures the Selenium setup works
-          pip install pandas requests pymupdf pytesseract pillow python-docx \
-            PyPDF2 ollama beautifulsoup4 selenium pdf2image webdriver-manager
+          pip install pandas pymupdf pytesseract pillow python-docx \
+            selenium pdf2image webdriver-manager
 
-      # --- 6. Run the Scraper ---
       - name: Run Scraper
-        # Make sure your script name matches exactly
         run: python Mp.py
 
-      # --- 7. Upload Results ---
       - name: Upload CSV Artifact
         uses: actions/upload-artifact@v4
         with:
           name: scraper-results
-          path: tender_results_summary.csv
+          path: results.csv
 
-      # --- 8. Save results to GitHub ---
       - name: Commit and Push
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add tender_results_summary.csv
-          git commit -m "📊 Daily Scrape Update: $(date +'%Y-%m-%d')" || echo "No changes"
+          git add results.csv
+          git commit -m "📊 Daily Scrape: $(date +'%Y-%m-%d')" || echo "No changes"
           git push
