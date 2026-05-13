@@ -5,14 +5,9 @@ on:
     # Runs at 05:00 UTC every day
     - cron: '0 1 * * *'
 
-# Grant write permission so the bot can push the CSV back to the repo
-permissions:
-  contents: write
-
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    # OCR is heavy; 60 minutes is safe for a few pages
     timeout-minutes: 60 
 
     steps:
@@ -33,25 +28,11 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
-          pip install pandas requests pymupdf pytesseract pillow python-docx beautifulsoup4
+          # Added supabase to your install list
+          pip install pandas requests pymupdf pytesseract pillow python-docx beautifulsoup4 supabase
 
       - name: Run Tanmia Scraper
         env:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         run: python Tanmia.py
-
-      - name: Upload result as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: daily-tanmia-results
-          path: results.csv
-
-      - name: Commit and Push CSV
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add results.csv
-          # The '|| exit 0' prevents the action from failing if there are no new tenders
-          git commit -m "📊 Daily Scrape: $(date +'%Y-%m-%d')" || exit 0
-          git push
