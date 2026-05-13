@@ -136,18 +136,23 @@ for page_num in range(1, 4):
                 except Exception as e:
                     print(f"  ⚠️ Failed to download {att_url}: {e}")
 
-            results.append({
+           # 1. Create the dictionary for THIS specific match
+            new_tender = {
                 "Date": post_date,
                 "Title": title_tag.text.strip(),
                 "URL": article_url,
                 "Extracted_Text": full_extracted_text,
-                "Source": "Tanmia"
-            })
+                "source": "Tanmia"  # Ensure this matches your Supabase column name exactly
+            }
             
+            # 2. Add it to your local list (optional, for record-keeping)
+            results.append(new_tender)
+
+            # 3. Send ONLY this new item to Supabase
             try:
-                # Insert into your Supabase table (replace 'tenders' with your table name)
-                response = supabase.table("Tenders Raw Data").insert(results).execute()
-                print(f"🚀 Successfully sent to Supabase: {results['Title']}")
+                # Use the 'new_tender' variable here, not 'results'
+                response = supabase.table("Tenders Raw Data").insert(new_tender).execute()
+                print(f"🚀 Successfully sent to Supabase: {new_tender['Title']}")
             except Exception as e:
                 print(f"❌ Supabase Insert Error: {e}")
 
