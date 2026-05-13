@@ -146,8 +146,8 @@ for page_num in range(1, 4):
             
             try:
                 # Insert into your Supabase table (replace 'tenders' with your table name)
-                response = supabase.table("Tenders Raw Data").insert(data_to_insert).execute()
-                print(f"🚀 Successfully sent to Supabase: {data_to_insert['Title']}")
+                response = supabase.table("Tenders Raw Data").insert(results).execute()
+                print(f"🚀 Successfully sent to Supabase: {results['Title']}")
             except Exception as e:
                 print(f"❌ Supabase Insert Error: {e}")
 
