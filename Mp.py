@@ -24,6 +24,16 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, ElementClickInterceptedException
+from supabase import create_client, Client
+
+# Replace the Configuration section or add after existing config
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
+
+if not SUPABASE_KEY or not SUPABASE_URL:
+    raise ValueError("Please set SUPABASE_URL and SUPABASE_SERVICE_KEY environment variables.")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # -----------------------------
 # CONFIGURATION
@@ -344,28 +354,33 @@ try:
 
 finally:
     # -----------------------------
-    # SAVE TO CSV
+    # SYNC TO SUPABASE (Replaces CSV part)
     # -----------------------------
-    csv_path = os.path.join(os.getcwd(), "tender_results_summary.csv")
-
     if all_processed_tenders:
-        df_out = pd.DataFrame(all_processed_tenders)
-        # Append if file already exists (keeps history), write fresh if not
-        if os.path.exists(csv_path):
-            df_out.to_csv(csv_path, mode="a", index=False, encoding="utf-8-sig", header=False)
-            print(f"✅ Appended {len(df_out)} tenders to {csv_path}")
-        else:
-            df_out.to_csv(csv_path, index=False, encoding="utf-8-sig")
-            print(f"✅ Saved {len(df_out)} tenders to {csv_path}")
+        print(f"\n📤 Syncing {len(all_processed_tenders)} tenders to Supabase...")
+        
+        for tender in all_processed_tenders:
+            # Prepare the data to match your Supabase columns
+            # We map your existing keys to the database columns
+            data_to_insert = {
+                "Date": tender.get("date_limite"),
+                "Title": tender.get("objet"),
+                "URL": tender.get("first_button_url"),
+                "Extracted_Text": tender.get("merged_text"),
+                "Source": "MarchesPublics" # Identifying the origin
+            }
+            
+            try:
+                # Use upsert to avoid duplicates if the URL already exists
+                supabase.table("Tenders Raw Data").upsert(data_to_insert, on_conflict="URL").execute()
+                print(f"✅ Synced: {data_to_insert['Title'][:50]}...")
+            except Exception as e:
+                print(f"❌ Failed to sync {tender.get('reference')}: {e}")
     else:
-        print("ℹ️ No tenders processed.")
+        print("ℹ️ No tenders processed to sync.")
 
+    # Cleanup remains the same
     try:
         driver.quit()
     except Exception:
         pass
-
-    if os.path.exists(download_dir):
-        shutil.rmtree(download_dir, ignore_errors=True)
-
-    print("🎉 Script finished safely.")
