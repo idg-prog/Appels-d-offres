@@ -140,19 +140,20 @@ for page_num in range(1, 4):
                 "Date": post_date,
                 "Title": title_tag.text.strip(),
                 "URL": article_url,
-                "Extracted_Text": full_extracted_text
+                "Extracted_Text": full_extracted_text,
+                "Source": "Tanmia"
             })
             
+            try:
+                # Insert into your Supabase table (replace 'tenders' with your table name)
+                response = supabase.table("Tenders Raw Data").insert(data_to_insert).execute()
+                print(f"🚀 Successfully sent to Supabase: {data_to_insert['Title']}")
+            except Exception as e:
+                print(f"❌ Supabase Insert Error: {e}")
+
     except Exception as e:
         print(f"⚠️ Network error on page {page_num}: {e}")
 
-# --- FINAL STEP: SAVE TO CSV ---
-df = pd.DataFrame(results)
+# You can now delete the "FINAL STEP: SAVE TO CSV" section entirely
+print("\n🏁 Scraping and Database Sync Complete.")
 
-if not df.empty:
-    # utf-8-sig ensures Arabic and French characters work in Excel
-    df.to_csv("results.csv", index=False, encoding="utf-8-sig")
-    print(f"\n💾 SUCCESS: Saved {len(df)} offers to 'results.csv'")
-else:
-    print("\nℹ️ No offers found for the target date. Creating empty file.")
-    pd.DataFrame(columns=["Date", "Title", "URL", "Extracted_Text"]).to_csv("results.csv", index=False)
