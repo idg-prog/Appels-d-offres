@@ -28,8 +28,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
-          # Added supabase to your install list
-          pip install pandas requests pymupdf pytesseract pillow python-docx beautifulsoup4 supabase
+          pip install -r requirements.txt
 
       - name: Run Tanmia Scraper
         env:
