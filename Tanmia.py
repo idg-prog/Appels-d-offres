@@ -12,6 +12,18 @@ from bs4 import BeautifulSoup as bs
 from datetime import datetime, timedelta
 import re
 import unicodedata
+from supabase import create_client, Client
+import openpyxl
+
+
+# --- CONFIG ---
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
+if not SUPABASE_KEY:
+    raise ValueError("Please set the SUPABASE_SERVICE_KEY environment variable.")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 
 # --- CONFIG ---
 pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
