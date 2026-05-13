@@ -142,7 +142,7 @@ for page_num in range(1, 4):
                 "Title": title_tag.text.strip(),
                 "URL": article_url,
                 "Extracted_Text": full_extracted_text,
-                "source": "Tanmia"  # Ensure this matches your Supabase column name exactly
+                "Source": "Tanmia"  # Ensure this matches your Supabase column name exactly
             }
             
             # 2. Add it to your local list (optional, for record-keeping)
