@@ -17,10 +17,14 @@ st.set_page_config(
 # SUPABASE CONNECTION
 # ============================================
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_SERVICE_KEY"]
+
+supabase = create_client(
+    SUPABASE_URL,
+    SUPABASE_KEY
+)
 
 # ============================================
 # LOAD DATA
