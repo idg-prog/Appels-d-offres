@@ -5,7 +5,7 @@ import ollama
 
 # Supabase Connection
 URL = os.environ.get("SUPABASE_URL")
-KEY = os.environ.get("SUPABASE_KEY")
+KEY = os.environ.get("SUPABASE_SERVICE_KEY")
 supabase: Client = create_client(URL, KEY)
 
 def get_ai_extraction(text):
