@@ -43,22 +43,32 @@ def get_ai_extraction(text):
         return None
 
 def main():
-    # 1. Get up to 100 unprocessed rows from raw table
-    # Replace 'Tenders Raw Data' with your actual raw data table name
-    response = supabase.table("Tenders Raw Data").select("*").eq("processed", False).limit(100).execute()
+
+    # Get all rows from raw table
+    response = (
+        supabase
+        .table("Tenders Raw Data")
+        .select("*")
+        .limit(100)
+        .execute()
+    )
+
     records = response.data
 
     if not records:
-        print("No new documents to process.")
+        print("No documents found.")
         return
 
     for record in records:
-        print(f"Processing Raw ID: {record['id']}...")
-        
-        extracted = get_ai_extraction(record.get('extracted_text', ''))
+
+        print(f"Processing ID: {record['id']}")
+
+        extracted = get_ai_extraction(
+            record.get("Extracted_Text", "")
+        )
 
         if extracted:
-            # 2. Insert into your structured table using exact column names from image
+
             structured_data = {
                 "Title": extracted.get("Title"),
                 "Date de publication": extracted.get("Date_publication"),
@@ -68,17 +78,17 @@ def main():
                 "Budget": extracted.get("Budget"),
                 "Caution": extracted.get("Caution"),
                 "Description Technique": extracted.get("Technical_Description"),
-                "URL": extracted.get("URL") or record.get("url")
+                "URL": extracted.get("URL") or record.get("URL")
             }
-            
-            # Replace 'Tenders Clean Data' with your actual output table name
-            supabase.table("Tenders Clean Data").insert(structured_data).execute()
 
-            # 3. Mark raw data as processed
-            supabase.table("Tenders Raw Data").update({"processed": True}).eq("id", record["id"]).execute()
-            print(f"Successfully processed: {extracted.get('Title')}")
+            supabase.table(
+                "Tenders Clean Data"
+            ).insert(structured_data).execute()
+
+            print(f"Processed: {structured_data['Title']}")
+
         else:
-            print(f"Failed to process ID {record['id']}")
+            print(f"Failed processing ID {record['id']}")
 
 if __name__ == "__main__":
     main()
