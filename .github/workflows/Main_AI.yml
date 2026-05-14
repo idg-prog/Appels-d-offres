@@ -16,17 +16,12 @@ jobs:
           python-version: '3.10'
 
       - name: Install Dependencies
-        run: pip install supabase ollama
+        run: pip install openai supabase
 
-      - name: Install Ollama & Qwen
-        run: |
-          curl -fsSL https://ollama.com/install.sh | sh
-          ollama serve & 
-          sleep 10
-          ollama pull qwen2.5:7b
 
       - name: Run Pipeline
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          OPENROUTER_API_KEY : ${{ secrets.OPENROUTER_API_KEY }}
         run: python Main_AI.py
