@@ -44,8 +44,8 @@ def get_ai_extraction(text):
 
 def main():
     # 1. Get up to 100 unprocessed rows from raw table
-    # Replace 'raw_tenders' with your actual raw data table name
-    response = supabase.table("raw_tenders").select("*").eq("processed", False).limit(100).execute()
+    # Replace 'Tenders Raw Data' with your actual raw data table name
+    response = supabase.table("Tenders Raw Data").select("*").eq("processed", False).limit(100).execute()
     records = response.data
 
     if not records:
@@ -71,11 +71,11 @@ def main():
                 "URL": extracted.get("URL") or record.get("url")
             }
             
-            # Replace 'structured_tenders' with your actual output table name
-            supabase.table("structured_tenders").insert(structured_data).execute()
+            # Replace 'Tenders Clean Data' with your actual output table name
+            supabase.table("Tenders Clean Data").insert(structured_data).execute()
 
             # 3. Mark raw data as processed
-            supabase.table("raw_tenders").update({"processed": True}).eq("id", record["id"]).execute()
+            supabase.table("Tenders Raw Data").update({"processed": True}).eq("id", record["id"]).execute()
             print(f"Successfully processed: {extracted.get('Title')}")
         else:
             print(f"Failed to process ID {record['id']}")
