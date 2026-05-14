@@ -19,13 +19,24 @@ client = OpenAI(
 
 def get_ai_extraction(text, retries=3):
     prompt = f"""
-    Analyze this Moroccan public procurement document. 
-    Extract the details and return ONLY a valid JSON object.
+    Analyze this Moroccan public procurement document.
     
-    REQUIRED FIELDS:
-    - Title, Date_publication, Client, Localisation, Date_limite, Budget, Caution, URL
-    - Technical_Description (Job offer, Methodology, Type of consultants)
-
+    Return ONLY valid JSON.
+    Do not use markdown.
+    Do not use ```json.
+    Do not add explanations.
+    
+    Required fields:
+    - Title
+    - Date_publication
+    - Client
+    - Localisation
+    - Date_limite
+    - Budget
+    - Caution
+    - URL
+    - Technical_Description
+    
     TEXT:
     {text}
     """
@@ -35,9 +46,13 @@ def get_ai_extraction(text, retries=3):
             response = client.chat.completions.create(
                 model="minimax/minimax-m2.5:free",
                 messages=[{"role": "user", "content": prompt}],
-                response_format={"type": "json_object"}
             )
             content = response.choices[0].message.content
+            content = content.strip()
+            if content.startswith("```"):
+                content = content.split("```")[1]
+                content = content.replace("json", "", 1).strip()
+            
             return json.loads(content)
             
         except RateLimitError:
