@@ -2,264 +2,192 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 from supabase import create_client
+import io
 
 # ============================================
-# 1. PAGE CONFIGURATION
+# 1. CONFIGURATION
 # ============================================
-st.set_page_config(
-    page_title="AO Monitoring Dashboard",
-    page_icon="📊",
-    layout="wide"
-)
+st.set_page_config(page_title="AO Monitoring", layout="wide")
+
+# Simulation de la date système basée sur votre fichier (18 Mai 2026)
+# Dans un cas réel, utilisez : TODAY = datetime.now().date()
+TODAY = datetime(2026, 5, 18).date() 
 
 # ============================================
-# 2. CUSTOM CSS: THE "SAAS" TABLE DESIGN
+# 2. DESIGN CSS (DARK SAAS)
 # ============================================
 st.markdown("""
     <style>
-    /* Global Background */
     .stApp { background-color: #0F172A; color: #F1F5F9; }
+    [data-testid="stHeader"] { background: rgba(0,0,0,0); }
     
-    /* Custom Header Tabs */
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; margin-bottom: 20px; }
+    /* Onglets style "Pills" blancs comme l'image */
+    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
     .stTabs [data-baseweb="tab"] {
         background-color: #1E293B;
         border-radius: 8px;
         padding: 8px 20px;
         color: #94A3B8;
         border: 1px solid #334155;
-        font-weight: 500;
-        transition: 0.3s;
     }
     .stTabs [data-baseweb="tab--active"] {
-        background-color: #FFFFFF !important; /* White like the image */
+        background-color: #FFFFFF !important;
         color: #0F172A !important;
         border: none !important;
     }
 
-    /* Professional Table Styling */
+    /* Table Design */
     .saas-table {
         width: 100%;
         border-collapse: collapse;
         background-color: #1E293B;
         border-radius: 12px;
         overflow: hidden;
-        border: 1px solid #334155;
-    }
-    .saas-table thead {
-        background-color: #1E293B;
-        border-bottom: 1px solid #334155;
+        margin-top: 10px;
     }
     .saas-table th {
         text-align: left;
         padding: 15px 20px;
         color: #94A3B8;
-        font-size: 0.85rem;
-        font-weight: 600;
+        font-size: 0.8rem;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        border-bottom: 1px solid #334155;
     }
     .saas-table td {
-        padding: 16px 20px;
+        padding: 14px 20px;
         border-bottom: 1px solid #334155;
-        vertical-align: middle;
-        font-size: 0.95rem;
-    }
-    
-    /* Acheteur Column with Logo */
-    .acheteur-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 12px;
+        font-size: 0.9rem;
     }
     .logo-circle {
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
-        background: #334155;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        color: #F1F5F9;
-        font-size: 0.8rem;
-        border: 1px solid #475569;
+        width: 30px; height: 30px; border-radius: 6px;
+        background: #334155; display: inline-flex;
+        align-items: center; justify-content: center;
+        font-weight: bold; margin-right: 10px;
     }
 
-    /* Detail Box styling */
+    /* Detail Box */
     .detail-box {
         background-color: #1E293B;
         padding: 25px;
         border-radius: 12px;
         border: 1px solid #334155;
-        margin-top: 30px;
+        margin-top: 20px;
     }
-    
     .ai-box {
         background-color: #2E1065;
         border: 1px solid #7C3AED;
-        padding: 18px;
-        border-radius: 8px;
-        margin-top: 20px;
+        padding: 15px; border-radius: 8px; margin-top: 15px;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # ============================================
-# 3. DATA LOADING
+# 3. CHARGEMENT ET PARSING DES DATES
 # ============================================
-@st.cache_data(ttl=300)
-def load_data():
-    try:
-        url = st.secrets["SUPABASE_URL"]
-        key = st.secrets["SUPABASE_SERVICE_KEY"]
-        supabase = create_client(url, key)
-        response = supabase.table("Tenders Clean Data").select("*").execute()
-        df = pd.DataFrame(response.data)
-    except:
-        return pd.DataFrame()
+def clean_date(date_str):
+    if not date_str or str(date_str) == "nan": return None
+    date_str = str(date_str).lower().replace('juin', 'june').replace('mai', 'may')
+    formats = ['%d/%m/%Y', '%Y-%m-%d', '%d %B %Y', '%d %b %Y']
+    for fmt in formats:
+        try: return datetime.strptime(date_str.split(' à')[0].strip(), fmt).date()
+        except: continue
+    return None
 
-    if df.empty: return df
-    
-    df['date_pub_dt'] = pd.to_datetime(df['Date de publication'], dayfirst=True, errors='coerce')
-    df['date_lim_dt'] = pd.to_datetime(df['Date de limite'], dayfirst=True, errors='coerce')
+@st.cache_data
+def get_data():
+    # Ici, remplacez par votre appel Supabase
+    # df = supabase.table("...").select("*").execute()
+    # Pour l'exemple, on charge votre CSV
+    data = """id,Title,Date de publication,Client,Localisation,Date de limite,Budget,Caution,Description Technique,URL
+5,Creative Hubs Programme - British Council Morocco,,British Council,Morocco,12 June 2026,"£10,000 per year (up to £30,000 total over 3 years)",,Description hubs...
+6,"Achat et Livraison de 4 560 plants d'olivier",,Karama Solidarity Maroc (KSM),Sidi Kacem,21/05/2026,,,"Achat oliviers..."
+7,Evaluation finale NAFASS Casablanca,11/05/2026,Association La Bienfaisance,,31/05/2026,100000 MAD TTC,Non mentionné,"Evaluation formation..."
+"""
+    df = pd.read_csv(io.StringIO(data))
+    df['pub_dt'] = df['Date de publication'].apply(clean_date)
+    df['lim_dt'] = df['Date de limite'].apply(clean_date)
     df.fillna("", inplace=True)
     return df
 
-df_full = load_data()
+df = get_data()
 
-# Filtering for tabs
-today = datetime.now().date()
-yesterday = today - timedelta(days=1)
-three_days_limit = today + timedelta(days=3)
+# Logique des filtres temporels
+yesterday = TODAY - timedelta(days=1)
+three_days_limit = TODAY + timedelta(days=3)
 
-df_nouveaux = df_full[df_full['date_pub_dt'].dt.date == yesterday]
-df_urgent = df_full[(df_full['date_lim_dt'].dt.date >= today) & 
-                    (df_full['date_lim_dt'].dt.date <= three_days_limit)]
+df_tout = df
+df_nouveaux = df[df['pub_dt'] == yesterday]
+df_urgent = df[(df['lim_dt'] >= TODAY) & (df['lim_dt'] <= three_days_limit)]
 
 # ============================================
-# 4. HEADER & INTRODUCTION
+# 4. INTERFACE
 # ============================================
 st.title("📑 Tableau de Bord des Appels d'Offres")
 st.markdown("""
-    Explorez les opportunités de marchés publics. Utilisez les onglets pour filtrer par récence ou par urgence.
-    La liste ci-dessous affiche les informations clés ; sélectionnez une offre pour voir l'analyse détaillée.
+    Bienvenue sur votre espace de veille. Ce tableau récapitule les derniers marchés publics détectés. 
+    Consultez les onglets pour voir les nouveautés ou les urgences, et sélectionnez une ligne pour le détail.
 """)
-st.write("")
+
+t1, t2, t3 = st.tabs([f"Tout ({len(df_tout)})", f"Nouveaux ({len(df_nouveaux)})", f"Urgent ({len(df_urgent)})"])
+
+def render_table(data_df):
+    if data_df.empty:
+        st.info("Aucun résultat pour cette catégorie.")
+        return None
+    
+    html = """<table class="saas-table">
+    <thead><tr><th>Acheteur</th><th>Titre</th><th>Publication</th><th>Limite</th><th>Budget</th></tr></thead>
+    <tbody>"""
+    
+    for _, row in data_df.head(10).iterrows():
+        init = row['Client'][0] if row['Client'] else "?"
+        html += f"""
+        <tr>
+            <td><div class="logo-circle">{init}</div>{row['Client']}</td>
+            <td style="font-weight:500;">{row['Title'][:70]}...</td>
+            <td style="color:#94A3B8;">{row['Date de publication']}</td>
+            <td style="color:#EF4444; font-weight:600;">{row['Date de limite']}</td>
+            <td style="color:#10B981; font-weight:600;">{row['Budget']}</td>
+        </tr>"""
+    html += "</tbody></table>"
+    st.markdown(html, unsafe_allow_html=True)
+    return data_df
+
+with t1: current_view = render_table(df_tout)
+with t2: current_view = render_table(df_nouveaux)
+with t3: current_view = render_table(df_urgent)
 
 # ============================================
-# 5. THE CUSTOM TABLE
+# 5. DÉTAILS EN DESSOUS
 # ============================================
-if df_full.empty:
-    st.error("Aucune donnée disponible.")
-else:
-    # Use native tabs but styled via CSS to look like pills
-    t1, t2, t3 = st.tabs([
-        f"Tout ({len(df_full)})", 
-        f"Nouveaux ({len(df_nouveaux)})", 
-        f"Urgent ({len(df_urgent)})"
-    ])
-
-    def render_custom_table(data):
-        if data.empty:
-            st.info("Aucun résultat dans cette catégorie.")
-            return None
-        
-        # Limit to 10 rows
-        data_subset = data.head(10)
-        
-        # Build Table HTML
-        table_html = """
-        <table class="saas-table">
-            <thead>
-                <tr>
-                    <th>Acheteur</th>
-                    <th>Titre de l'Offre</th>
-                    <th>Date Publication</th>
-                    <th>Date Limite</th>
-                    <th>Budget</th>
-                </tr>
-            </thead>
-            <tbody>
-        """
-        
-        for _, row in data_subset.iterrows():
-            # Create a simple letter logo if none exists
-            initial = row['Client'][0] if row['Client'] else '?'
-            
-            table_html += f"""
-                <tr>
-                    <td>
-                        <div class="acheteur-wrapper">
-                            <div class="logo-circle">{initial}</div>
-                            <div>{row['Client']}</div>
-                        </div>
-                    </td>
-                    <td style="color: #F1F5F9; font-weight: 500;">{row['Title'][:80]}...</td>
-                    <td style="color: #94A3B8;">{row['Date de publication']}</td>
-                    <td style="color: #EF4444; font-weight: 600;">{row['Date de limite']}</td>
-                    <td style="color: #10B981; font-weight: 600;">{row['Budget']}</td>
-                </tr>
-            """
-        
-        table_html += "</tbody></table>"
-        st.markdown(table_html, unsafe_allow_html=True)
-        return data
-
-    with t1: active_data = render_custom_table(df_full)
-    with t2: active_data = render_custom_table(df_nouveaux)
-    with t3: active_data = render_custom_table(df_urgent)
-
-    # ============================================
-    # 6. DETAILS SECTION (Under Table)
-    # ============================================
-    if active_data is not None:
-        st.write("")
-        st.divider()
-        
-        # Selection for details
-        titles = active_data["Title"].tolist()
-        choice = st.selectbox("🔍 Sélectionnez un marché pour afficher l'analyse technique :", titles)
-        
-        row = active_data[active_data["Title"] == choice].iloc[0]
-
-        st.markdown(f"""
-        <div class="detail-box">
-            <div style="display: flex; justify-content: space-between; align-items: start;">
-                <h2 style="margin:0; color:#FFFFFF;">{row['Title']}</h2>
-                <div style="text-align:right;">
-                    <a href="{row['URL']}" target="_blank" style="background:#EF4444; color:white; padding:8px 20px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:0.9rem;">Dossier Officiel 🔗</a>
-                </div>
-            </div>
-            
-            <p style="color:#94A3B8; margin-top:10px; font-size:1.1rem;">
-                🏛️ {row['Client']} | 📅 Publié le {row['Date de publication']}
-            </p>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin: 25px 0;">
-                <div style="background:#334155; padding:15px; border-radius:8px;">
-                    <small style="color:#94A3B8;">Budget Estimé</small><br><b style="font-size:1.2rem;">{row['Budget']}</b>
-                </div>
-                <div style="background:#334155; padding:15px; border-radius:8px;">
-                    <small style="color:#94A3B8;">Caution Provisoire</small><br><b style="font-size:1.2rem;">{row['Caution']}</b>
-                </div>
-                <div style="background:#334155; padding:15px; border-radius:8px;">
-                    <small style="color:#94A3B8;">Lieu d'exécution</small><br><b style="font-size:1.2rem;">{row.get('Localisation', 'Maroc')}</b>
-                </div>
-            </div>
-
-            <div style="margin-top:20px;">
-                <h4 style="color:#FFFFFF; border-left: 4px solid #EF4444; padding-left:10px;">Détails de la consultation</h4>
-                <p style="color:#CBD5E1; font-size:1rem; line-height:1.6; margin-top:10px;">{row['Description Technique']}</p>
-            </div>
-
-            <div class="ai-box">
-                <span style="color:#A78BFA; font-weight:bold; font-size:0.85rem;">✨ RÉSUMÉ ANALYTIQUE IA</span>
-                <p style="margin-top:10px; font-size:0.95rem; color:#E2E8F0; line-height:1.5;">
-                    Cette opportunité est classée comme stratégique pour <b>{row['Client']}</b>. 
-                    L'analyse suggère une forte composante technique. La date de limite au <b>{row['Date de limite']}</b> 
-                    impose une préparation rapide du dossier de réponse.
-                </p>
-            </div>
+if current_view is not None:
+    st.write("")
+    selected_title = st.selectbox("👉 Détails techniques de l'offre :", current_view['Title'].tolist())
+    item = current_view[current_view['Title'] == selected_title].iloc[0]
+    
+    st.markdown(f"""
+    <div class="detail-box">
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+            <h2 style="margin:0; color:#FFF;">{item['Title']}</h2>
+            <a href="{item['URL']}" target="_blank" style="background:#EF4444; color:white; padding:8px 15px; border-radius:6px; text-decoration:none; font-weight:bold;">Lien Officiel 🔗</a>
         </div>
-        """, unsafe_allow_html=True)
+        <p style="color:#94A3B8; margin-top:8px;">🏛️ {item['Client']} | 📍 {item['Localisation']}</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 20px 0;">
+            <div style="background:#334155; padding:12px; border-radius:8px;"><small>Budget</small><br><b>{item['Budget']}</b></div>
+            <div style="background:#334155; padding:12px; border-radius:8px;"><small>Caution</small><br><b>{item['Caution']}</b></div>
+            <div style="background:#334155; padding:12px; border-radius:8px;"><small>Date Limite</small><br><b>{item['Date de limite']}</b></div>
+        </div>
+
+        <h4 style="color:#FFF; border-left: 3px solid #EF4444; padding-left:10px;">Description Technique</h4>
+        <p style="color:#CBD5E1; line-height:1.6;">{item['Description Technique']}</p>
+
+        <div class="ai-box">
+            <span style="color:#A78BFA; font-weight:bold; font-size:0.8rem;">✨ RÉSUMÉ IA</span>
+            <p style="margin-top:8px; font-size:0.9rem; color:#E2E8F0;">
+                Opportunité majeure pour <b>{item['Client']}</b>. Le projet nécessite une expertise pointue. 
+                Vérifiez l'éligibilité avant le {item['Date de limite']}.
+            </p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
