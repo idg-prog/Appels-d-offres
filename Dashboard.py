@@ -284,7 +284,7 @@ st.markdown(f"""
         <p style="color:#94A3B8; font-size:0.95rem; margin-bottom:15px;">
             Besoin d'un outil sur mesure ou d'une extraction de données complexe ?
         </p>
-        <a href="mailto:anaslachhab666@gmail.com" class="contact-button">📩 Me contacter par Email</a>
+        <a href="mailto:anaslachhab666@gmail.com" class="contact-button">Me contacter par Email</a>
     </div>
     <div style="text-align: center; padding: 20px 0;">
         <small style="color: #475569;">© 2026 Strategy Monitor</small>
