@@ -8,7 +8,8 @@ from supabase import create_client
 # ============================================
 st.set_page_config(page_title="AO Monitoring", layout="wide")
 
-# Simulation de la date système (18 Mai 2026)
+# Date de référence pour le test (18 Mai 2026)
+# En production, utilisez : TODAY = datetime.now().date()
 TODAY = datetime(2026, 5, 18).date() 
 
 @st.cache_resource
@@ -23,72 +24,31 @@ def init_supabase():
 st.markdown("""
     <style>
     .stApp { background-color: #0F172A; color: #F1F5F9; }
-    
-    /* Onglets style "Pills" blancs */
     .stTabs [data-baseweb="tab-list"] { gap: 10px; }
     .stTabs [data-baseweb="tab"] {
-        background-color: #1E293B;
-        border-radius: 8px;
-        padding: 8px 20px;
-        color: #94A3B8;
-        border: 1px solid #334155;
+        background-color: #1E293B; border-radius: 8px; padding: 8px 20px;
+        color: #94A3B8; border: 1px solid #334155;
     }
     .stTabs [data-baseweb="tab--active"] {
-        background-color: #FFFFFF !important;
-        color: #0F172A !important;
-        border: none !important;
+        background-color: #FFFFFF !important; color: #0F172A !important; border: none !important;
     }
-
-    /* Table Design */
-    .saas-table {
-        width: 100%;
-        border-collapse: collapse;
-        background-color: #1E293B;
-        border-radius: 12px;
-        overflow: hidden;
-    }
-    .saas-table th {
-        text-align: left;
-        padding: 15px 20px;
-        color: #94A3B8;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        border-bottom: 1px solid #334155;
-    }
-    .saas-table td {
-        padding: 14px 20px;
-        border-bottom: 1px solid #334155;
-        font-size: 0.9rem;
-    }
-    .logo-circle {
-        width: 30px; height: 30px; border-radius: 6px;
-        background: #475569; display: inline-flex;
-        align-items: center; justify-content: center;
-        font-weight: bold; margin-right: 10px; color: white;
-    }
-
-    .detail-box {
-        background-color: #1E293B; padding: 25px;
-        border-radius: 12px; border: 1px solid #334155; margin-top: 20px;
-    }
-    .ai-box {
-        background-color: #2E1065; border: 1px solid #7C3AED;
-        padding: 15px; border-radius: 8px; margin-top: 15px;
-    }
+    .saas-table { width: 100%; border-collapse: collapse; background-color: #1E293B; border-radius: 12px; overflow: hidden; }
+    .saas-table th { text-align: left; padding: 15px 20px; color: #94A3B8; font-size: 0.8rem; text-transform: uppercase; border-bottom: 1px solid #334155; }
+    .saas-table td { padding: 14px 20px; border-bottom: 1px solid #334155; font-size: 0.9rem; }
+    .logo-circle { width: 30px; height: 30px; border-radius: 6px; background: #475569; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 10px; color: white; }
+    .detail-box { background-color: #1E293B; padding: 25px; border-radius: 12px; border: 1px solid #334155; margin-top: 20px; }
+    .ai-box { background-color: #2E1065; border: 1px solid #7C3AED; padding: 15px; border-radius: 8px; margin-top: 15px; }
     </style>
     """, unsafe_allow_html=True)
 
 # ============================================
 # 3. TRAITEMENT DES DONNÉES
 # ============================================
-def clean_date(date_str):
-    if not date_str or str(date_str).lower() in ["nan", "none", ""]: return None
-    date_str = str(date_str).lower().replace('juin', 'june').replace('mai', 'may')
-    formats = ['%d/%m/%Y', '%Y-%m-%d', '%d %B %Y', '%d %b %Y']
-    for fmt in formats:
-        try: return datetime.strptime(date_str.split(' à')[0].strip(), fmt).date()
-        except: continue
-    return None
+def clean_date_series(s):
+    """Transforme une série de texte en objets date proprement"""
+    s = s.astype(str).str.lower().str.replace('juin', 'june').str.replace('mai', 'may')
+    s = s.str.split(' à').str[0].str.strip()
+    return pd.to_datetime(s, errors='coerce', dayfirst=True).dt.date
 
 @st.cache_data(ttl=600)
 def get_data():
@@ -99,36 +59,27 @@ def get_data():
     if df.empty:
         return df
 
-    # Conversion des colonnes de dates pour les filtres
-    df['pub_dt'] = df['Date de publication'].apply(clean_date)
-    df['lim_dt'] = df['Date de limite'].apply(clean_date)
+    # Colonnes techniques pour le filtrage (Gardent le type Date ou NaT)
+    df['pub_dt'] = clean_date_series(df['Date de publication'])
+    df['lim_dt'] = clean_date_series(df['Date de limite'])
     
-    # Remplacement sécurisé des NaN par du texte vide (évite le TypeError)
-    for col in df.columns:
-        df[col] = df[col].astype(object).fillna("")
-        
+    # On ne fait SURTOUT PAS fillna("") ici pour éviter l'erreur de type
     return df
 
-try:
-    df = get_data()
-except Exception as e:
-    st.error(f"Erreur de chargement : {e}")
-    st.stop()
+df = get_data()
 
-# Filtres temporels
+# Filtrage sécurisé (les NaT sont ignorés automatiquement dans la comparaison)
 yesterday = TODAY - timedelta(days=1)
 three_days_limit = TODAY + timedelta(days=3)
 
 df_tout = df
-# On utilise .apply car après fillna(""), ce sont des objets
 df_nouveaux = df[df['pub_dt'] == yesterday]
-df_urgent = df[(df['lim_dt'] != "") & (df['lim_dt'] >= TODAY) & (df['lim_dt'] <= three_days_limit)]
+df_urgent = df[(df['lim_dt'].notna()) & (df['lim_dt'] >= TODAY) & (df['lim_dt'] <= three_days_limit)]
 
 # ============================================
 # 4. INTERFACE
 # ============================================
 st.title("📊 Suivi des Appels d'Offres")
-st.markdown("Consultez les dernières opportunités de marchés publics extraites en temps réel.")
 
 t1, t2, t3 = st.tabs([f"Tout ({len(df_tout)})", f"Nouveaux ({len(df_nouveaux)})", f"Urgent ({len(df_urgent)})"])
 
@@ -141,16 +92,21 @@ def render_table(data_df):
     <thead><tr><th>Acheteur</th><th>Titre</th><th>Publication</th><th>Limite</th><th>Budget</th></tr></thead>
     <tbody>"""
     
-    for _, row in data_df.head(10).iterrows():
-        client_name = str(row['Client'])
-        init = client_name[0] if client_name else "?"
+    for _, row in data_df.head(15).iterrows():
+        # Gestion sécurisée des valeurs vides pour l'affichage
+        buyer = str(row['Client']) if pd.notna(row['Client']) else ""
+        init = buyer[0] if buyer else "?"
+        budget = str(row['Budget']) if pd.notna(row['Budget']) else "-"
+        date_pub = str(row['Date de publication']) if pd.notna(row['Date de publication']) else "-"
+        date_lim = str(row['Date de limite']) if pd.notna(row['Date de limite']) else "-"
+        
         html += f"""
         <tr>
-            <td><div class="logo-circle">{init}</div>{client_name}</td>
+            <td><div class="logo-circle">{init}</div>{buyer}</td>
             <td style="font-weight:500;">{str(row['Title'])[:75]}...</td>
-            <td style="color:#94A3B8;">{row['Date de publication']}</td>
-            <td style="color:#EF4444; font-weight:600;">{row['Date de limite']}</td>
-            <td style="color:#10B981; font-weight:600;">{row['Budget']}</td>
+            <td style="color:#94A3B8;">{date_pub}</td>
+            <td style="color:#EF4444; font-weight:600;">{date_lim}</td>
+            <td style="color:#10B981; font-weight:600;">{budget}</td>
         </tr>"""
     html += "</tbody></table>"
     st.markdown(html, unsafe_allow_html=True)
@@ -168,6 +124,9 @@ if current_view is not None and not current_view.empty:
     selected_title = st.selectbox("🔍 Analyse détaillée de l'offre :", current_view['Title'].tolist())
     item = current_view[current_view['Title'] == selected_title].iloc[0]
     
+    # Remplissage des champs vides juste pour l'affichage du bloc détail
+    item = item.fillna("Non spécifié")
+
     st.markdown(f"""
     <div class="detail-box">
         <div style="display: flex; justify-content: space-between; align-items: start;">
@@ -188,8 +147,8 @@ if current_view is not None and not current_view.empty:
         <div class="ai-box">
             <span style="color:#A78BFA; font-weight:bold; font-size:0.8rem;">✨ RÉSUMÉ ANALYTIQUE IA</span>
             <p style="margin-top:10px; font-size:0.92rem; color:#E2E8F0; line-height:1.5;">
-                Analyse en cours pour le compte de <b>{item['Client']}</b>. Ce marché présente des spécifications techniques 
-                importantes. Assurez-vous de soumettre votre dossier avant le {item['Date de limite']}.
+                Analyse IA : Ce marché pour <b>{item['Client']}</b> présente des exigences spécifiques. 
+                Veuillez préparer votre réponse avant le {item['Date de limite']}.
             </p>
         </div>
     </div>
