@@ -179,7 +179,7 @@ else:
 
     # Création des onglets stylisés
     tab1, tab2, tab3 = st.tabs([
-        f"📋 Tous ({len(df_raw)})", 
+        f"📋 Active ({len(df_raw)})", 
         f"✨ Nouveaux ({len(df_nouveaux)})", 
         f"🔥 Urgent ({len(df_urgent)})"
     ])
