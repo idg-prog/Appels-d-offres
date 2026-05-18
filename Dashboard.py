@@ -40,15 +40,14 @@ for _, row in df.iterrows():
     
     # Nettoyage et formatage
     link = url if url.startswith('http') else f"https://{url}"
-    initial = client[0] if client != "-" else "?"
     
     # Tronquer les textes longs pour le tableau
-    title_short = (title[:60] + '...') if len(title) > 60 else title
+    title_short = (title[:70] + '...') if len(title) > 70 else title
     desc_short = (desc[:100] + '...') if len(desc) > 100 else desc
 
     table_rows += f"""
     <tr>
-        <td><div class="logo-badge">{initial}</div><span class="client-name">{client}</span></td>
+        <td class="client-name">{client}</td>
         <td class="title-cell">{title_short}</td>
         <td class="muted">{pub}</td>
         <td class="urgent">{lim}</td>
@@ -76,7 +75,7 @@ full_html = f"""
         border-radius: 12px;
         overflow: hidden;
         border: 1px solid #334155;
-        table-layout: fixed; /* Pour contrôler la largeur des colonnes */
+        table-layout: fixed;
     }}
     .saas-table thead {{
         background-color: #111827;
@@ -91,7 +90,7 @@ full_html = f"""
         letter-spacing: 0.5px;
     }}
     .saas-table td {{
-        padding: 12px 15px;
+        padding: 14px 15px;
         border-bottom: 1px solid #334155;
         font-size: 13px;
         color: #CBD5E1;
@@ -101,14 +100,7 @@ full_html = f"""
     }}
     .saas-table tr:hover {{ background-color: #26334D; }}
     
-    /* Colonnes spécifiques */
-    .logo-badge {{
-        width: 28px; height: 28px; border-radius: 6px;
-        background: #475569; display: inline-flex;
-        align-items: center; justify-content: center;
-        font-weight: bold; margin-right: 10px; color: white;
-    }}
-    .client-name {{ font-weight: 500; }}
+    .client-name {{ font-weight: 500; color: #E2E8F0; }}
     .title-cell {{ font-weight: 600; color: #F8FAFC; white-space: normal; line-height: 1.3; }}
     .desc-cell {{ color: #94A3B8; font-size: 12px; white-space: normal; }}
     .muted {{ color: #94A3B8; }}
@@ -126,16 +118,16 @@ full_html = f"""
         display: inline-block;
     }}
 
-    /* Définition des largeurs de colonnes */
-    th:nth-child(1), td:nth-child(1) {{ width: 180px; }} /* Client */
-    th:nth-child(2), td:nth-child(2) {{ width: 220px; }} /* Titre */
+    /* Largeurs de colonnes */
+    th:nth-child(1), td:nth-child(1) {{ width: 180px; }} /* Acheteur */
+    th:nth-child(2), td:nth-child(2) {{ width: 250px; }} /* Titre */
     th:nth-child(3), td:nth-child(3) {{ width: 100px; }} /* Publication */
-    th:nth-child(4), td:nth-child(4) {{ width: 110px; }} /* Limite */
-    th:nth-child(5), td:nth-child(5) {{ width: 120px; }} /* Budget */
-    th:nth-child(6), td:nth-child(6) {{ width: 100px; }} /* Caution */
-    th:nth-child(7), td:nth-child(7) {{ width: 120px; }} /* Localisation */
-    th:nth-child(8), td:nth-child(8) {{ width: 200px; }} /* Description */
-    th:nth-child(9), td:nth-child(9) {{ width: 80px; }}  /* Action */
+    th:nth-child(4), td:nth-child(4) {{ width: 110px; }} /* Échéance */
+    th:nth-child(5), td:nth-child(5) {{ width: 140px; }} /* Budget */
+    th:nth-child(6), td:nth-child(6) {{ width: 110px; }} /* Caution */
+    th:nth-child(7), td:nth-child(7) {{ width: 130px; }} /* Lieu */
+    th:nth-child(8), td:nth-child(8) {{ width: 220px; }} /* Description */
+    th:nth-child(9), td:nth-child(9) {{ width: 90px; }}  /* Action */
 </style>
 
 <table class="saas-table">
@@ -162,12 +154,12 @@ full_html = f"""
 # 3. INTERFACE STREAMLIT
 # ============================================
 st.markdown('<h1 style="color:white; font-size: 2.2rem; font-weight:800; margin-bottom:0;">📊 Dashboard de Veille Appels d\'Offres</h1>', unsafe_allow_html=True)
-st.markdown('<p style="color:#94A3B8; font-size:1.1rem; margin-bottom:25px;">Interface centralisée pour le suivi des marchés publics. Les données incluent les détails techniques et financiers complets.</p>', unsafe_allow_html=True)
+st.markdown('<p style="color:#94A3B8; font-size:1.1rem; margin-bottom:25px;">Interface centralisée pour le suivi des marchés publics. Accédez aux informations techniques et financières en un coup d\'œil.</p>', unsafe_allow_html=True)
 
 if df.empty:
-    st.warning("Aucune donnée trouvée dans Supabase.")
+    st.warning("Aucune donnée disponible.")
 else:
-    # On affiche le composant HTML avec une hauteur fixe et scroll
-    components.html(full_html, height=800, scrolling=True)
+    # Ajustement de la hauteur pour accommoder le contenu
+    components.html(full_html, height=850, scrolling=True)
 
 st.markdown("<center><small style='color: #475569;'>Base de données synchronisée en temps réel via Supabase SQL</small></center>", unsafe_allow_html=True)
