@@ -287,6 +287,6 @@ st.markdown(f"""
         <a href="mailto:anaslachhab666@gmail.com" class="contact-button">Me contacter par Email</a>
     </div>
     <div style="text-align: center; padding: 20px 0;">
-        <small style="color: #475569;">© 2026 Strategy Monitor</small>
+        <small style="color: #475569;">© 2026 Anas Lachhab</small>
     </div>
 """, unsafe_allow_html=True)
