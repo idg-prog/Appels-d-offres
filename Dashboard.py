@@ -258,7 +258,7 @@ def build_html_table(data_df):
 # ============================================
 # 5. INTERFACE PRINCIPALE
 # ============================================
-st.markdown('<h1 class="main-title">📊 Intelligence & Veille Appels d\'Offres</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-title">Intelligence & Veille Appels d\'Offres</h1>', unsafe_allow_html=True)
 
 st.markdown(f"""
     <div class="intro-container">
