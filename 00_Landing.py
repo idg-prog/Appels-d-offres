@@ -700,7 +700,7 @@ if submitted:
 
     required_fields =[
         company_name, secteur_entreprise, email, phone, city, effectif,
-        age_entreprise, ca_range, role_respondant, tags, Email_Newsletter, 
+        age_entreprise, ca_range, role_respondant, tags, 
         q_digital_tools, q_dream_automation
     ]
     # Add q_ao_pain_autre to required fields if "Autre" is selected for q_ao_pain
