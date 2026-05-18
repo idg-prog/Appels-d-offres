@@ -118,7 +118,7 @@ def get_data():
 df_raw = get_data()
 
 # ============================================
-# 4. GÉNÉRATION DU TABLEAU HTML
+# 4. GÉNÉRATION DU TABLEAU HTML (AVEC TAGS)
 # ============================================
 def build_html_table(data_df):
     if data_df.empty:
@@ -130,14 +130,24 @@ def build_html_table(data_df):
             v = row.get(col, "-")
             return v if pd.notna(v) and str(v).lower() != "nan" else "-"
 
-        client, title, pub, lim = val('Client'), val('Title'), val('Date de publication'), val('Date de limite')
-        budget, caution, loc, desc, url = val('Budget'), val('Caution'), val('Localisation'), val('Description Technique'), val('URL')
+        client = val('Client')
+        title = val('Title')
+        pub = val('Date de publication')
+        lim = val('Date de limite')
+        budget = val('Budget')
+        caution = val('Caution')
+        loc = val('Localisation')
+        tags = val('Tags')
+        desc = val('Description Technique')
+        url = val('URL')
+        
         link = url if str(url).startswith('http') else f"https://{url}" if url != "-" else "#"
 
         table_rows += f"""
         <tr onclick="toggleDetails({idx})" style="cursor: pointer;">
             <td class="primary-col">{client}</td>
             <td class="primary-col"><span class="expand-icon">▶</span> {title}</td>
+            <td class="tag-cell"><span class="tag-badge">{tags}</span></td>
             <td class="muted">{pub}</td>
             <td class="urgent">{lim}</td>
             <td class="success">{budget}</td>
@@ -146,9 +156,10 @@ def build_html_table(data_df):
             <td><a class="btn-link" href="{link}" target="_blank">Ouvrir</a></td>
         </tr>
         <tr id="details-{idx}" class="details-row" style="display: none;">
-            <td colspan="8">
+            <td colspan="9">
                 <div class="expanded-content">
                     <div class="expanded-section"><span class="label">📌 Analyse du Titre</span><div class="content-text">{title}</div></div>
+                    <div class="expanded-section"><span class="label">🏷️ Domaines</span><div class="content-text">{tags}</div></div>
                     <div class="expanded-section"><span class="label">🛠️ Spécifications Techniques</span><div class="content-text">{desc}</div></div>
                     <div style="margin-top:10px;"><a class="btn-link" href="{link}" target="_blank">Accéder au Document Source 🔗</a></div>
                 </div>
@@ -159,32 +170,81 @@ def build_html_table(data_df):
     return f"""
     <style>
         body {{ background-color: #0F172A; color: #F1F5F9; font-family: 'Inter', sans-serif; margin: 0; }}
-        .saas-table {{ width: 100%; border-collapse: collapse; background-color: #1E293B; table-layout: fixed; border: 1px solid #334155; }}
-        .saas-table thead th {{ position: sticky; top: 0; background-color: #111827; z-index: 10; text-align: left; padding: 18px 15px; color: #94A3B8; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #475569; }}
+        
+        .saas-table {{ 
+            width: 100%; 
+            border-collapse: collapse; 
+            background-color: #1E293B; 
+            table-layout: fixed; 
+            border: 1px solid #334155; 
+        }}
+        
+        .saas-table thead th {{ 
+            position: sticky; 
+            top: 0; 
+            background-color: #111827; 
+            z-index: 10;
+            text-align: left; 
+            padding: 18px 15px; 
+            color: #94A3B8; 
+            font-size: 10px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            border-bottom: 2px solid #475569;
+        }}
+        
         .saas-table td {{ padding: 16px 15px; border-bottom: 1px solid #334155; font-size: 13px; color: #CBD5E1; vertical-align: top; }}
         .saas-table tr:hover {{ background-color: #26334D; }}
+        
         .primary-col {{ font-weight: 600; color: #FFFFFF; line-height: 1.4; word-wrap: break-word; white-space: normal; }}
+        
+        /* Ajustement des largeurs pour inclure la colonne TAGS */
+        th:nth-child(1), td:nth-child(1) {{ width: 180px; }} /* Acheteur */
+        th:nth-child(2), td:nth-child(2) {{ width: 200px; }} /* Titre */
+        th:nth-child(3), td:nth-child(3) {{ width: 150px; }} /* Tags/Domaines */
+        th:nth-child(4), td:nth-child(4) {{ width: 90px; }}  /* Pub */
+        th:nth-child(5), td:nth-child(5) {{ width: 90px; }}  /* Limite */
+        th:nth-child(6), td:nth-child(6) {{ width: 110px; }} /* Budget */
+        th:nth-child(7), td:nth-child(7) {{ width: 90px; }}  /* Caution */
+        th:nth-child(8), td:nth-child(8) {{ width: 100px; }} /* Lieu */
+        th:nth-child(9), td:nth-child(9) {{ width: 80px; }}  /* Action */
+
+        .tag-badge {{
+            background: #334155;
+            color: #EF4444;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            border: 1px solid #475569;
+            display: inline-block;
+        }}
+
         .expand-icon {{ color: #EF4444; font-size: 9px; margin-right: 4px; }}
         .urgent {{ color: #F87171; font-weight: bold; }}
         .success {{ color: #10B981; font-weight: bold; }}
         .muted {{ color: #94A3B8; font-size: 12px; }}
+        
         .details-row {{ background-color: #111827 !important; }}
         .expanded-content {{ padding: 25px; border-left: 4px solid #EF4444; }}
         .label {{ color: #94A3B8; text-transform: uppercase; font-size: 10px; font-weight: bold; }}
         .content-text {{ font-size: 14px; margin-top: 5px; color: #E2E8F0; line-height: 1.6; }}
         .btn-link {{ background-color: #EF4444; color: white !important; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: bold; display: inline-block; }}
-        
-        th:nth-child(1), td:nth-child(1) {{ width: 220px; }}
-        th:nth-child(2), td:nth-child(2) {{ width: 220px; }}
-        th:nth-child(3), td:nth-child(3) {{ width: 100px; }}
-        th:nth-child(4), td:nth-child(4) {{ width: 100px; }}
-        th:nth-child(5), td:nth-child(5) {{ width: 130px; }}
-        th:nth-child(6), td:nth-child(6) {{ width: 100px; }}
-        th:nth-child(7), td:nth-child(7) {{ width: 120px; }}
-        th:nth-child(8), td:nth-child(8) {{ width: 90px; }}
     </style>
     <table class="saas-table">
-        <thead><tr><th>Acheteur</th><th>Titre du Marché</th><th>Publication</th><th>Échéance</th><th>Budget</th><th>Caution</th><th>Lieu</th><th>Action</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Acheteur</th>
+                <th>Titre</th>
+                <th>Domaines</th>
+                <th>Pub.</th>
+                <th>Échéance</th>
+                <th>Budget</th>
+                <th>Caution</th>
+                <th>Lieu</th>
+                <th>Lien</th>
+            </tr>
+        </thead>
         <tbody>{table_rows}</tbody>
     </table>
     <script>
@@ -203,7 +263,7 @@ st.markdown('<h1 class="main-title">📊 Intelligence & Veille Appels d\'Offres<
 st.markdown(f"""
     <div class="intro-container">
         <div class="intro-text">
-            Bienvenue sur votre portail de monitoring stratégique. Les opportunités sont automatiquement analysées par IA.
+            Bienvenue sur votre portail de monitoring stratégique. Les opportunités sont classées par domaine pour une meilleure visibilité.
             <br>
             <small>Date du jour : {TODAY.strftime("%d/%m/%Y")}</small>
         </div>
@@ -222,23 +282,18 @@ else:
         f"🔥 Urgent ({len(df_urgent)})"
     ])
 
-    with tab1: components.html(build_html_table(df_raw), height=800, scrolling=True)
-    with tab2: components.html(build_html_table(df_nouveaux), height=800, scrolling=True)
-    with tab3: components.html(build_html_table(df_urgent), height=800, scrolling=True)
+    with tab1: components.html(build_html_table(df_raw), height=850, scrolling=True)
+    with tab2: components.html(build_html_table(df_nouveaux), height=850, scrolling=True)
+    with tab3: components.html(build_html_table(df_urgent), height=850, scrolling=True)
 
 # ============================================
-# 6. SECTION CONTACT (NOUVEAU)
+# 6. SECTION CONTACT
 # ============================================
 st.markdown(f"""
     <div class="footer-contact">
         <h2>🚀 Vous voulez plus d'automatisations IA ?</h2>
-        <p>
-            Besoin d'un outil sur mesure, d'extraction de données complexe ou d'agents IA intelligents ? 
-            Boostez votre productivité dès maintenant.
-        </p>
-        <a href="mailto:anaslachhab666@gmail.com" class="contact-button">
-            📩 Me contacter par Email
-        </a>
+        <p>Besoin d'un outil sur mesure, d'extraction de données complexe ou d'agents IA intelligents ?</p>
+        <a href="mailto:anaslachhab666@gmail.com" class="contact-button">📩 Me contacter par Email</a>
     </div>
     <center><small style='color: #475569;'>Optimisé pour la prise de décision • © 2026 Strategy Monitor</small></center>
 """, unsafe_allow_html=True)
