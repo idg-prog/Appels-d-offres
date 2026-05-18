@@ -40,7 +40,8 @@ def get_ai_extraction(text, retries=3):
     2. **Budget & Caution**: Return ONLY "Number Currency". Remove text like "TTC", "per year", or explanations. Example: "150000 MAD".
     3. **Tags**: Select 1 relevant categories from the ALLOWED LIST below.
     4. **Return format**: Valid JSON only. No markdown (no ```).
-    5.**Language** : Always the output need to be in French language
+    5. **Location** : Fix the location Text, ineed to be city and country in fr (ex:Rabat,Maroc)
+    6.**Language** : Always the output need to be in French language
     
     REQUIRED FIELDS:
     - Title
