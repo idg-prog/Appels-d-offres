@@ -598,7 +598,7 @@ with st.container():
     </div>
     """, unsafe_allow_html=True)
 
-    q_top_pain = st.text_input("QQuel est votre principal problème opérationnel actuellement ? *", placeholder="Décrivez votre situation...")
+    q_top_pain = st.text_input("Quel est votre principal problème opérationnel actuellement ? *", placeholder="Décrivez votre situation...")
 
     q_time_lost = st.selectbox("Combien d'heures par semaine estimez-vous perdre sur des tâches manuelles ?",[
         "Moins de 5 heures",
