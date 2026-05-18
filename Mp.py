@@ -227,7 +227,8 @@ try:
             buyer    = row.find_element(By.XPATH, './/div[contains(@id,"panelBlocDenomination")]').text.replace("Acheteur public : ", "")
             lieux    = row.find_element(By.XPATH, './/div[contains(@id,"panelBlocLieuxExec")]').text.replace("\n", ", ")
             deadline = row.find_element(By.XPATH, './/td[@headers="cons_dateEnd"]').text.replace("\n", " ")
-            url      = row.find_element(By.XPATH, './/td[@class="actions"]//a[1]').get_attribute("href")
+            #url      = row.find_element(By.XPATH, './/td[@class="actions"]//a[1]').get_attribute("href")
+            url      = row.find_element(By.XPATH, './/td[@class="actions"]//a[img[@alt="Accéder à la consultation"]]').get_attribute("href")
             data.append({
                 "reference": ref,
                 "objet": objet,
