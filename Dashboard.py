@@ -204,7 +204,21 @@ def build_html_table(data_df):
 # ============================================
 # 6. INTERFACE PRINCIPALE
 # ============================================
-st.markdown('<h1 class="main-title">Intelligence & Veille Appels d\'Offres</h1>', unsafe_allow_html=True)
+st.markdown(f"""
+    <div class="intro-container">
+        <div class="intro-text">
+            Bienvenue sur votre portail de monitoring stratégique. Cette interface centralise l'ensemble des marchés publics 
+            détectés. Les opportunités sont automatiquement analysées et classées pour optimiser votre réactivité.
+            <br><br>
+            🚀 <b>Comment utiliser ce tableau :</b>
+            <ul>
+                <li>Utilisez les <b>onglets</b> pour filtrer les nouveaux marchés de la veille ou les dossiers urgents.</li>
+                <li>Cliquez sur n'importe quelle ligne pour <b>dérouler les détails techniques</b> et le résumé de l'offre.</li>
+            </ul>
+            <small>Date : {TODAY.strftime("%d/%m/%Y")}</small>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
 
 if df_raw.empty:
     st.warning("Aucune donnée trouvée dans Supabase.")
@@ -234,11 +248,43 @@ else:
 # ============================================
 # 7. FOOTER CONTACT
 # ============================================
+st.markdown("""
+    <style>
+    .footer-contact {
+        background-color: #1E293B;
+        padding: 25px;
+        border-radius: 12px;
+        text-align: center;
+        margin-top: 50px;
+        border: 1px solid #334155;
+    }
+    .contact-button {
+        display: inline-block;
+        background-color: #3B82F6;
+        color: white !important;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        margin-top: 15px;
+        transition: background-color 0.3s;
+    }
+    .contact-button:hover {
+        background-color: #2563EB;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# 2. Your corrected Markdown
 st.markdown(f"""
     <div class="footer-contact">
-        <h3 style="color:white; margin-bottom:5px;">🚀 Vous voulez plus d'automatisations IA ?</h3>
-        <p style="color:#94A3B8; font-size:0.9rem;">Besoin d'un outil sur mesure ou d'extraction de données complexe ?</p>
+        <h3 style="color:white; margin-top:0; margin-bottom:10px;">🚀 Vous voulez plus d'automatisations IA ?</h3>
+        <p style="color:#94A3B8; font-size:0.95rem; margin-bottom:15px;">
+            Besoin d'un outil sur mesure ou d'une extraction de données complexe ?
+        </p>
         <a href="mailto:anaslachhab666@gmail.com" class="contact-button">📩 Me contacter par Email</a>
     </div>
-    <center><small style='color: #475569; padding: 20px 0; display:block;'>© 2026 Strategy Monitor</small></center>
+    <div style="text-align: center; padding: 20px 0;">
+        <small style="color: #475569;">© 2026 Strategy Monitor</small>
+    </div>
 """, unsafe_allow_html=True)
