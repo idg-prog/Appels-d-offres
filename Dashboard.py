@@ -1,243 +1,183 @@
 import streamlit as st
 import pandas as pd
-from supabase import create_client
+from datetime import datetime, timedelta
 
 # ============================================
 # 1. PAGE CONFIGURATION
 # ============================================
 st.set_page_config(
-    page_title="Appels d'Offres - Monitoring",
-    page_icon="🇲🇦",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    page_title="AO Monitoring Dashboard",
+    page_icon="📊",
+    layout="wide"
 )
 
 # ============================================
-# 2. ADVANCED DARK SAAS CSS
+# 2. DARK THEME CSS (With Red Tab Underline)
 # ============================================
 st.markdown("""
     <style>
-    /* Main Background */
-    .stApp {
-        background-color: #0F172A;
-        color: #F1F5F9;
-    }
+    .stApp { background-color: #0F172A; color: #F1F5F9; }
     
-    /* Sidebar styling */
+    /* Custom Sidebar */
     section[data-testid="stSidebar"] {
         background-color: #1E293B !important;
         border-right: 1px solid #334155;
     }
 
-    /* Tabs Styling (Matching the white buttons in your image but for Dark Mode) */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background-color: transparent;
-    }
+    /* Tab Design - Red Underline like the image */
+    .stTabs [data-baseweb="tab-list"] { gap: 10px; background-color: transparent; }
     .stTabs [data-baseweb="tab"] {
-        height: 40px;
+        height: 50px;
         background-color: #1E293B;
-        border-radius: 8px;
-        padding: 0 20px;
+        border-radius: 8px 8px 0 0;
+        padding: 0 30px;
         color: #94A3B8;
-        border: 1px solid #334155;
+        border: none;
     }
     .stTabs [data-baseweb="tab--active"] {
-        background-color: #334155 !important;
+        background-color: #1E293B !important;
         color: #FFFFFF !important;
-        border-bottom: none !important;
+        border-bottom: 3px solid #EF4444 !important; /* Red underline */
     }
 
-    /* The Detail Card (Right Panel) */
-    .detail-card {
+    /* Detail Box styling */
+    .detail-box {
         background-color: #1E293B;
-        padding: 24px;
+        padding: 25px;
         border-radius: 12px;
         border: 1px solid #334155;
-        position: sticky;
-        top: 20px;
+        margin-top: 20px;
     }
     
     .status-pill {
-        background-color: rgba(34, 197, 94, 0.1);
-        color: #4ADE80;
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #F87171;
         padding: 4px 12px;
         border-radius: 20px;
         font-size: 0.8rem;
-        font-weight: 600;
-        border: 1px solid rgba(34, 197, 94, 0.2);
+        border: 1px solid rgba(239, 68, 68, 0.2);
     }
     
-    .ai-summary-box {
-        background-color: #2E1065; /* Deep Purple like image */
+    .ai-summary {
+        background-color: #2E1065;
         border: 1px solid #7C3AED;
-        padding: 16px;
+        padding: 15px;
         border-radius: 8px;
-        margin-top: 20px;
-    }
-
-    /* Custom metrics layout */
-    .metric-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-        margin: 20px 0;
-    }
-    .metric-item {
-        background: #0F172A;
-        padding: 10px;
-        border-radius: 6px;
-        border: 1px solid #334155;
-    }
-
-    /* Table headers */
-    .stDataFrame {
-        border-radius: 10px;
+        margin-top: 15px;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # ============================================
-# 3. DATA CONNECTION
+# 3. DATA PROCESSING
 # ============================================
-@st.cache_resource
-def init_connection():
-    return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_SERVICE_KEY"])
-
-supabase = init_connection()
-
-@st.cache_data(ttl=300)
+@st.cache_data
 def load_data():
-    response = supabase.table("Tenders Clean Data").select("*").execute()
-    data = response.data
-    df = pd.DataFrame(data) if data else pd.DataFrame()
-    if not df.empty:
-        # Match your SQL columns
-        df.fillna("", inplace=True)
+    # Replace this with your Supabase call or CSV upload
+    # For this demo, I'm assuming you are loading the CSV data provided
+    df = pd.read_csv("data.csv") # Ensure your file is named data.csv or link to Supabase
+    
+    # Standardize Dates for filtering
+    df['date_pub_dt'] = pd.to_datetime(df['Date de publication'], dayfirst=True, errors='coerce')
+    df['date_limite_dt'] = pd.to_datetime(df['Date de limite'], dayfirst=True, errors='coerce')
+    
+    df.fillna("", inplace=True)
     return df
 
 df = load_data()
 
 # ============================================
-# 4. SIDEBAR FILTERS
+# 4. TAB LOGIC
+# ============================================
+# Logic for "Yesterday" and "3 days left"
+today = datetime.now().date()
+yesterday = today - timedelta(days=1)
+three_days_from_now = today + timedelta(days=3)
+
+# Filter 1: Nouveaux (Published yesterday)
+df_nouveaux = df[df['date_pub_dt'].dt.date == yesterday]
+
+# Filter 2: Urgent (Limite in less than 3 days)
+# Note: only includes future dates
+df_urgent = df[(df['date_limite_dt'].dt.date >= today) & 
+               (df['date_limite_dt'].dt.date <= three_days_from_now)]
+
+# ============================================
+# 5. SIDEBAR FILTERS
 # ============================================
 with st.sidebar:
-    st.button("➕ Nouvelle recherche", use_container_width=True)
-    st.markdown("---")
+    st.title("🔎 Filtres")
+    search = st.text_input("Recherche par mot clé")
     
-    q = st.text_input("🔍 Rechercher des appels d'offres...", placeholder="ex: Maintenance")
+    clients = sorted(df["Client"].unique())
+    sel_client = st.multiselect("Acheteurs", clients)
 
-    with st.expander("📂 Type d'Appel d'offres"):
-        st.multiselect("Sélectionner", ["National", "International"])
-
-    with st.expander("🏢 Acheteurs", expanded=True):
-        clients = sorted(df["Client"].unique()) if not df.empty else []
-        sel_clients = st.multiselect("Filtrer par acheteur", clients)
-
-    with st.expander("📍 Régions"):
-        locs = sorted(df["Localisation"].unique()) if not df.empty else []
-        sel_locs = st.multiselect("Filtrer par ville", locs)
+# Applying sidebar filters to the global pool
+if search:
+    df = df[df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
+if sel_client:
+    df = df[df["Client"].isin(sel_client)]
 
 # ============================================
-# 5. FILTERING LOGIC
+# 6. MAIN LAYOUT
 # ============================================
-filtered_df = df.copy()
-if not filtered_df.empty:
-    if sel_clients:
-        filtered_df = filtered_df[filtered_df["Client"].isin(sel_clients)]
-    if sel_locs:
-        filtered_df = filtered_df[filtered_df["Localisation"].isin(sel_locs)]
-    if q:
-        filtered_df = filtered_df[filtered_df.apply(lambda row: row.astype(str).str.contains(q, case=False).any(), axis=1)]
 
-# ============================================
-# 6. MAIN LAYOUT (Tabs + Table + Details)
-# ============================================
-col_main, col_side = st.columns([2, 1.2], gap="medium")
+# Tabs display
+t1, t2, t3 = st.tabs([
+    f"Tous ({len(df)})", 
+    f"Nouveaux ({len(df_nouveaux)})", 
+    f"Urgent - 3 jours ({len(df_urgent)})"
+])
 
-with col_main:
-    # Tabs like the image: Tout, Nouveaux, Déjà vu
-    t1, t2, t3 = st.tabs([f"Tout ({len(filtered_df)})", f"Nouveaux ({len(filtered_df)//2})", "Déjà vu (0)"])
+def render_table(data):
+    if data.empty:
+        st.info("Aucun appel d'offre trouvé pour cette catégorie.")
+        return None
     
-    with t1:
-        # We use a selectbox to drive the detail view because row-clicks 
-        # are not supported in all Streamlit versions yet
-        st.write("### 📋 Liste des marchés")
-        
-        # Displaying the clean table
-        display_cols = ["Client", "Title", "Date de publication"]
-        nice_df = filtered_df[display_cols].copy()
-        nice_df.columns = ["Acheteur", "Titre", "Date de publication"]
-        
-        st.dataframe(nice_df, use_container_width=True, height=650, hide_index=True)
-
-with col_side:
-    st.markdown("### 📄 Détails de l'appel d'offre")
+    # Define columns to show in the table
+    cols_to_display = [
+        "Title", "Client", "Date de limite", "Date de publication", 
+        "Description Technique", "Budget", "Caution", "URL"
+    ]
     
-    if not filtered_df.empty:
-        # Selectbox to pick which tender to view (replaces the click interaction)
-        selected_title = st.selectbox("Sélectionner pour voir les détails :", filtered_df["Title"].tolist())
-        row = filtered_df[filtered_df["Title"] == selected_title].iloc[0]
-        
-        # UI Detail Card
-        st.markdown(f"""
-            <div class="detail-card">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-                    <div style="background: #334155; width: 45px; height: 45px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">
-                        {row['Client'][0] if row['Client'] else 'A'}
-                    </div>
-                    <div>
-                        <strong style="font-size: 1.1rem;">{row['Client']}</strong><br>
-                        <span style="color: #64748B; font-size: 0.8rem;">REF: AO-{row.get('id', '001')}</span>
-                    </div>
-                </div>
-                
-                <h2 style="font-size: 1.25rem; line-height: 1.4; margin-bottom: 15px;">{row['Title']}</h2>
-                
-                <div class="status-pill">● En cours</div>
-                
-                <div class="metric-grid">
-                    <div class="metric-item">
-                        <small style="color: #64748B;">💰 Budget</small><br>
-                        <strong style="font-size: 1rem;">{row.get('Budget', 'N/A')}</strong>
-                    </div>
-                    <div class="metric-item">
-                        <small style="color: #64748B;">🛡️ Caution</small><br>
-                        <strong style="font-size: 1rem;">{row.get('Caution', 'N/A')}</strong>
-                    </div>
-                </div>
+    # Configure 10 rows height (~400px is roughly 10 rows in Streamlit)
+    selected_event = st.dataframe(
+        data[cols_to_display],
+        use_container_width=True,
+        height=450, 
+        hide_index=True,
+        column_config={
+            "URL": st.column_config.LinkColumn("Lien"),
+            "Description Technique": st.column_config.TextColumn("Description", width="large")
+        }
+    )
+    return data
 
-                <div style="font-size: 0.9rem; color: #94A3B8; margin-bottom: 20px;">
-                    <p>📅 <b>Publié :</b> {row.get('Date de publication', 'N/A')}</p>
-                    <p>⏰ <b>Limite :</b> {row.get('Date de limite', 'N/A')}</p>
-                    <p>📍 <b>Lieu :</b> {row.get('Localisation', 'Maroc')}</p>
-                </div>
-                
-                <div style="display: flex; gap: 10px;">
-                    <button style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #1E293B; color: white; cursor: pointer;">📥 Télécharger</button>
-                    <button style="flex: 1; padding: 10px; border-radius: 6px; border: none; background: #6366F1; color: white; font-weight: bold; cursor: pointer;">🚀 Soumission</button>
-                </div>
+# Handle which dataset to show based on tab
+with t1:
+    active_df = render_table(df)
+with t2:
+    active_df = render_table(df_nouveaux)
+with t3:
+    active_df = render_table(df_urgent)
 
-                <div class="ai-summary-box">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                        <span style="font-size: 0.75rem; font-weight: bold; color: #A78BFA;">AI</span>
-                        <span style="font-size: 0.75rem; color: #A78BFA; opacity: 0.8;">Données générées par IA</span>
-                    </div>
-                    <p style="font-size: 0.85rem; color: #E2E8F0; line-height: 1.5; margin: 0;">
-                        <b>Résumé de l'offre :</b> Cet appel d'offres concerne {row['Title']}. 
-                        L'exécution est prévue pour la région de <b>{row['Localisation']}</b> avec des critères techniques spécifiques mentionnés dans le DCE.
-                    </p>
-                </div>
+# ============================================
+# 7. DETAILS SECTION (Under the table)
+# ============================================
+st.markdown("---")
+
+if active_df is not None and not active_df.empty:
+    # Use a selectbox to pick the specific AO to see details for
+    ao_titles = active_df["Title"].tolist()
+    selection = st.selectbox("Sélectionnez un appel d'offre pour voir l'analyse complète :", ao_titles)
+    
+    row = active_df[active_df["Title"] == selection].iloc[0]
+
+    # Detailed Layout
+    st.markdown(f"""
+        <div class="detail-box">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <h2 style="margin:0; color: #F8FAFC;">{row['Title']}</h2>
+                <span class="status-pill">Fin dans { (pd.to_datetime(row['Date de limite'], errors='coerce') - datetime.now()).days if row['Date de limite'] else '?' } jours</span>
             </div>
-        """, unsafe_allow_html=True)
-        
-        with st.expander("🛠️ Description Technique"):
-            st.write(row.get("Description Technique", "Aucune description supplémentaire."))
-
-# ============================================
-# 7. EXPORT
-# ============================================
-st.sidebar.markdown("---")
-if not filtered_df.empty:
-    csv = filtered_df.to_csv(index=False).encode('utf-8')
-    st.sidebar.download_button("⬇️ Exporter (CSV)", csv, "marches_publics.csv", "text/csv", use_container_width=True)
+            <p style="color: #94A3B8; font-size: 1.1rem; margin-top: 5px;">🏢 {row['Client']} |
