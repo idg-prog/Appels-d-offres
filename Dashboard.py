@@ -205,10 +205,9 @@ st.markdown(f"""
             🚀 <b>Comment utiliser ce tableau :</b>
             <ul>
                 <li>Utilisez les <b>onglets</b> pour filtrer les nouveaux marchés de la veille ou les dossiers urgents.</li>
-                <li>L'en-tête du tableau reste <b>fixe</b> pour faciliter votre lecture lors du défilement.</li>
                 <li>Cliquez sur n'importe quelle ligne pour <b>dérouler les détails techniques</b> et le résumé de l'offre.</li>
             </ul>
-            <small>Date du système : {TODAY.strftime("%d/%m/%Y")}</small>
+            <small>Date : {TODAY.strftime("%d/%m/%Y")}</small>
         </div>
     </div>
 """, unsafe_allow_html=True)
