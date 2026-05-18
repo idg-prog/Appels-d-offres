@@ -4,61 +4,95 @@ from datetime import datetime, timedelta
 from supabase import create_client
 
 # ============================================
-# 1. CONFIGURATION DE LA PAGE
+# 1. PAGE CONFIGURATION
 # ============================================
 st.set_page_config(
-    page_title="Veille Appels d'Offres",
+    page_title="AO Monitoring Dashboard",
     page_icon="📊",
     layout="wide"
 )
 
 # ============================================
-# 2. DESIGN PERSONNALISÉ (DARK MODE & ACCENT ROUGE)
+# 2. CUSTOM CSS: THE "SAAS" TABLE DESIGN
 # ============================================
 st.markdown("""
     <style>
-    /* Fond principal sombre */
+    /* Global Background */
     .stApp { background-color: #0F172A; color: #F1F5F9; }
     
-    /* Cache le menu Streamlit et le bouton Sidebar */
-    #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* Design des onglets avec ligne rouge */
-    .stTabs [data-baseweb="tab-list"] { 
-        gap: 15px; 
-        margin-bottom: 20px;
-    }
+    /* Custom Header Tabs */
+    .stTabs [data-baseweb="tab-list"] { gap: 10px; margin-bottom: 20px; }
     .stTabs [data-baseweb="tab"] {
         background-color: #1E293B;
-        border-radius: 8px 8px 0 0;
-        padding: 12px 24px;
+        border-radius: 8px;
+        padding: 8px 20px;
         color: #94A3B8;
-        border: none;
-        font-weight: 600;
+        border: 1px solid #334155;
+        font-weight: 500;
+        transition: 0.3s;
     }
     .stTabs [data-baseweb="tab--active"] {
-        background-color: #1E293B !important;
-        color: #FFFFFF !important;
-        border-bottom: 4px solid #EF4444 !important; /* Ligne rouge */
+        background-color: #FFFFFF !important; /* White like the image */
+        color: #0F172A !important;
+        border: none !important;
     }
 
-    /* Style de la fiche de détails */
+    /* Professional Table Styling */
+    .saas-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #1E293B;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #334155;
+    }
+    .saas-table thead {
+        background-color: #1E293B;
+        border-bottom: 1px solid #334155;
+    }
+    .saas-table th {
+        text-align: left;
+        padding: 15px 20px;
+        color: #94A3B8;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .saas-table td {
+        padding: 16px 20px;
+        border-bottom: 1px solid #334155;
+        vertical-align: middle;
+        font-size: 0.95rem;
+    }
+    
+    /* Acheteur Column with Logo */
+    .acheteur-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .logo-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        background: #334155;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #F1F5F9;
+        font-size: 0.8rem;
+        border: 1px solid #475569;
+    }
+
+    /* Detail Box styling */
     .detail-box {
         background-color: #1E293B;
         padding: 25px;
         border-radius: 12px;
         border: 1px solid #334155;
-        margin-top: 20px;
-    }
-    
-    .badge-urgent {
-        background-color: rgba(239, 68, 68, 0.1);
-        color: #F87171;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        border: 1px solid rgba(239, 68, 68, 0.2);
+        margin-top: 30px;
     }
     
     .ai-box {
@@ -72,7 +106,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ============================================
-# 3. CHARGEMENT DES DONNÉES & LOGIQUE
+# 3. DATA LOADING
 # ============================================
 @st.cache_data(ttl=300)
 def load_data():
@@ -86,8 +120,7 @@ def load_data():
         return pd.DataFrame()
 
     if df.empty: return df
-
-    # Conversion des dates pour les filtres auto
+    
     df['date_pub_dt'] = pd.to_datetime(df['Date de publication'], dayfirst=True, errors='coerce')
     df['date_lim_dt'] = pd.to_datetime(df['Date de limite'], dayfirst=True, errors='coerce')
     df.fillna("", inplace=True)
@@ -95,118 +128,138 @@ def load_data():
 
 df_full = load_data()
 
-# Dates de référence
+# Filtering for tabs
 today = datetime.now().date()
 yesterday = today - timedelta(days=1)
 three_days_limit = today + timedelta(days=3)
 
-# Séparation par onglets
 df_nouveaux = df_full[df_full['date_pub_dt'].dt.date == yesterday]
 df_urgent = df_full[(df_full['date_lim_dt'].dt.date >= today) & 
                     (df_full['date_lim_dt'].dt.date <= three_days_limit)]
 
 # ============================================
-# 4. EN-TÊTE (TITRE & INTRO)
+# 4. HEADER & INTRODUCTION
 # ============================================
-st.title("📊 Suivi Stratégique des Appels d'Offres")
+st.title("📑 Tableau de Bord des Appels d'Offres")
 st.markdown("""
-    Bienvenue sur votre portail de veille automatisée. Ce tableau de bord centralise les marchés publics 
-    en temps réel. Les données sont triées par fraîcheur et par urgence pour vous permettre de 
-    prioriser vos réponses aux appels d'offres.
-    
-    *Sélectionnez un onglet pour filtrer la vue, puis cliquez sur une ligne pour voir le détail technique sous le tableau.*
+    Explorez les opportunités de marchés publics. Utilisez les onglets pour filtrer par récence ou par urgence.
+    La liste ci-dessous affiche les informations clés ; sélectionnez une offre pour voir l'analyse détaillée.
 """)
 st.write("")
 
 # ============================================
-# 5. TABLEAU PRINCIPAL
+# 5. THE CUSTOM TABLE
 # ============================================
 if df_full.empty:
-    st.error("Aucune donnée disponible pour le moment.")
+    st.error("Aucune donnée disponible.")
 else:
+    # Use native tabs but styled via CSS to look like pills
     t1, t2, t3 = st.tabs([
-        f"Tous ({len(df_full)})", 
-        f"Nouveaux - Hier ({len(df_nouveaux)})", 
-        f"Urgent - 3 Jours ({len(df_urgent)})"
+        f"Tout ({len(df_full)})", 
+        f"Nouveaux ({len(df_nouveaux)})", 
+        f"Urgent ({len(df_urgent)})"
     ])
 
-    cols_show = ["Title", "Client", "Date de limite", "Date de publication", 
-                 "Description Technique", "Budget", "Caution", "URL"]
-
-    def render_table(data):
+    def render_custom_table(data):
         if data.empty:
-            st.info("Aucun appel d'offre trouvé dans cette catégorie.")
+            st.info("Aucun résultat dans cette catégorie.")
             return None
         
-        # Hauteur fixée pour ~10 lignes
-        st.dataframe(
-            data[cols_show], 
-            use_container_width=True, 
-            height=440, 
-            hide_index=True,
-            column_config={
-                "URL": st.column_config.LinkColumn("Lien Officiel"),
-                "Budget": st.column_config.TextColumn("Budget", width="medium"),
-                "Title": st.column_config.TextColumn("Titre", width="large")
-            }
-        )
+        # Limit to 10 rows
+        data_subset = data.head(10)
+        
+        # Build Table HTML
+        table_html = """
+        <table class="saas-table">
+            <thead>
+                <tr>
+                    <th>Acheteur</th>
+                    <th>Titre de l'Offre</th>
+                    <th>Date Publication</th>
+                    <th>Date Limite</th>
+                    <th>Budget</th>
+                </tr>
+            </thead>
+            <tbody>
+        """
+        
+        for _, row in data_subset.iterrows():
+            # Create a simple letter logo if none exists
+            initial = row['Client'][0] if row['Client'] else '?'
+            
+            table_html += f"""
+                <tr>
+                    <td>
+                        <div class="acheteur-wrapper">
+                            <div class="logo-circle">{initial}</div>
+                            <div>{row['Client']}</div>
+                        </div>
+                    </td>
+                    <td style="color: #F1F5F9; font-weight: 500;">{row['Title'][:80]}...</td>
+                    <td style="color: #94A3B8;">{row['Date de publication']}</td>
+                    <td style="color: #EF4444; font-weight: 600;">{row['Date de limite']}</td>
+                    <td style="color: #10B981; font-weight: 600;">{row['Budget']}</td>
+                </tr>
+            """
+        
+        table_html += "</tbody></table>"
+        st.markdown(table_html, unsafe_allow_html=True)
         return data
 
-    with t1: active_data = render_table(df_full)
-    with t2: active_data = render_table(df_nouveaux)
-    with t3: active_data = render_table(df_urgent)
+    with t1: active_data = render_custom_table(df_full)
+    with t2: active_data = render_custom_table(df_nouveaux)
+    with t3: active_data = render_custom_table(df_urgent)
 
     # ============================================
-    # 6. SECTION DÉTAILS (SOUS LE TABLEAU)
+    # 6. DETAILS SECTION (Under Table)
     # ============================================
     if active_data is not None:
         st.write("")
-        st.subheader("📄 Fiche détaillée de l'offre")
+        st.divider()
         
-        # Menu déroulant pour choisir l'offre à détailler
+        # Selection for details
         titles = active_data["Title"].tolist()
-        choice = st.selectbox("Choisir une offre pour afficher les détails techniques :", titles)
+        choice = st.selectbox("🔍 Sélectionnez un marché pour afficher l'analyse technique :", titles)
         
         row = active_data[active_data["Title"] == choice].iloc[0]
 
         st.markdown(f"""
         <div class="detail-box">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
                 <h2 style="margin:0; color:#FFFFFF;">{row['Title']}</h2>
-                <span class="badge-urgent">Date Limite : {row['Date de limite']}</span>
+                <div style="text-align:right;">
+                    <a href="{row['URL']}" target="_blank" style="background:#EF4444; color:white; padding:8px 20px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:0.9rem;">Dossier Officiel 🔗</a>
+                </div>
             </div>
+            
             <p style="color:#94A3B8; margin-top:10px; font-size:1.1rem;">
-                🏛️ <b>Client :</b> {row['Client']} | 📅 <b>Publié le :</b> {row['Date de publication']}
+                🏛️ {row['Client']} | 📅 Publié le {row['Date de publication']}
             </p>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin: 20px 0;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin: 25px 0;">
                 <div style="background:#334155; padding:15px; border-radius:8px;">
-                    <small style="color:#94A3B8;">Budget Estimé</small><br><b style="font-size:1.2rem;">{row['Budget'] if row['Budget'] else 'Non spécifié'}</b>
+                    <small style="color:#94A3B8;">Budget Estimé</small><br><b style="font-size:1.2rem;">{row['Budget']}</b>
                 </div>
                 <div style="background:#334155; padding:15px; border-radius:8px;">
-                    <small style="color:#94A3B8;">Caution Provisoire</small><br><b style="font-size:1.2rem;">{row['Caution'] if row['Caution'] else '0.00 DH'}</b>
+                    <small style="color:#94A3B8;">Caution Provisoire</small><br><b style="font-size:1.2rem;">{row['Caution']}</b>
                 </div>
                 <div style="background:#334155; padding:15px; border-radius:8px;">
-                    <small style="color:#94A3B8;">Référence</small><br><b style="font-size:1.2rem;">ID-{row.get('id', 'N/A')}</b>
+                    <small style="color:#94A3B8;">Lieu d'exécution</small><br><b style="font-size:1.2rem;">{row.get('Localisation', 'Maroc')}</b>
                 </div>
             </div>
 
             <div style="margin-top:20px;">
-                <h4 style="color:#FFFFFF; border-left: 4px solid #EF4444; padding-left:10px;">🛠️ Description Technique</h4>
+                <h4 style="color:#FFFFFF; border-left: 4px solid #EF4444; padding-left:10px;">Détails de la consultation</h4>
                 <p style="color:#CBD5E1; font-size:1rem; line-height:1.6; margin-top:10px;">{row['Description Technique']}</p>
             </div>
 
             <div class="ai-box">
                 <span style="color:#A78BFA; font-weight:bold; font-size:0.85rem;">✨ RÉSUMÉ ANALYTIQUE IA</span>
                 <p style="margin-top:10px; font-size:0.95rem; color:#E2E8F0; line-height:1.5;">
-                    Cette consultation lancée par <b>{row['Client']}</b> porte sur des prestations de type technique. 
-                    L'analyse des pièces du marché suggère une attention particulière sur les délais d'exécution et la conformité 
-                    aux normes de sécurité. Pour plus de précisions, veuillez consulter le dossier complet via le lien ci-dessous.
+                    Cette opportunité est classée comme stratégique pour <b>{row['Client']}</b>. 
+                    L'analyse suggère une forte composante technique. La date de limite au <b>{row['Date de limite']}</b> 
+                    impose une préparation rapide du dossier de réponse.
                 </p>
-            </div>
-            
-            <div style="margin-top:25px; text-align: right;">
-                <a href="{row['URL']}" target="_blank" style="background:#EF4444; color:white; padding:12px 30px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:1rem;">Consulter l'annonce officielle 🔗</a>
             </div>
         </div>
         """, unsafe_allow_html=True)
