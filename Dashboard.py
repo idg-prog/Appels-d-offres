@@ -1,155 +1,167 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
 from supabase import create_client
 
 # ============================================
-# 1. CONFIGURATION ET CONNEXION
+# 1. CONFIGURATION DE LA PAGE
 # ============================================
-st.set_page_config(page_title="AO Monitoring", layout="wide")
-
-# Date de référence pour le test (18 Mai 2026)
-# En production, utilisez : TODAY = datetime.now().date()
-TODAY = datetime(2026, 5, 18).date() 
-
-@st.cache_resource
-def init_supabase():
-    url = st.secrets["SUPABASE_URL"]
-    key = st.secrets["SUPABASE_SERVICE_KEY"]
-    return create_client(url, key)
+st.set_page_config(
+    page_title="Veille Appels d'Offres",
+    page_icon="📊",
+    layout="wide"
+)
 
 # ============================================
-# 2. DESIGN CSS (DARK SAAS)
+# 2. DESIGN PERSONNALISÉ (DARK MODE & TABLEAU PROFESSIONNEL)
 # ============================================
 st.markdown("""
     <style>
+    /* Fond principal sombre */
     .stApp { background-color: #0F172A; color: #F1F5F9; }
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #1E293B; border-radius: 8px; padding: 8px 20px;
-        color: #94A3B8; border: 1px solid #334155;
+    
+    /* Titre et Intro */
+    .main-title { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; color: #FFFFFF; }
+    .intro-text { font-size: 1.1rem; color: #94A3B8; margin-bottom: 2rem; }
+
+    /* Style du Tableau SaaS */
+    .saas-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #1E293B;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #334155;
     }
-    .stTabs [data-baseweb="tab--active"] {
-        background-color: #FFFFFF !important; color: #0F172A !important; border: none !important;
+    .saas-table thead {
+        background-color: #0F172A;
+        border-bottom: 2px solid #334155;
     }
-    .saas-table { width: 100%; border-collapse: collapse; background-color: #1E293B; border-radius: 12px; overflow: hidden; }
-    .saas-table th { text-align: left; padding: 15px 20px; color: #94A3B8; font-size: 0.8rem; text-transform: uppercase; border-bottom: 1px solid #334155; }
-    .saas-table td { padding: 14px 20px; border-bottom: 1px solid #334155; font-size: 0.9rem; }
-    .logo-circle { width: 30px; height: 30px; border-radius: 6px; background: #475569; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 10px; color: white; }
-    .detail-box { background-color: #1E293B; padding: 25px; border-radius: 12px; border: 1px solid #334155; margin-top: 20px; }
-    .ai-box { background-color: #2E1065; border: 1px solid #7C3AED; padding: 15px; border-radius: 8px; margin-top: 15px; }
+    .saas-table th {
+        text-align: left;
+        padding: 18px 15px;
+        color: #94A3B8;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .saas-table td {
+        padding: 16px 15px;
+        border-bottom: 1px solid #334155;
+        font-size: 0.9rem;
+        color: #CBD5E1;
+        vertical-align: middle;
+    }
+    .saas-table tr:hover {
+        background-color: #26334d;
+    }
+
+    /* Badge Logo Client */
+    .logo-badge {
+        width: 32px; height: 32px; border-radius: 6px;
+        background: #475569; display: inline-flex;
+        align-items: center; justify-content: center;
+        font-weight: bold; margin-right: 10px; color: white;
+    }
+
+    /* Bouton Lien */
+    .btn-link {
+        background-color: #EF4444;
+        color: white !important;
+        padding: 6px 12px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 # ============================================
-# 3. TRAITEMENT DES DONNÉES
+# 3. CHARGEMENT DES DONNÉES
 # ============================================
-def clean_date_series(s):
-    """Transforme une série de texte en objets date proprement"""
-    s = s.astype(str).str.lower().str.replace('juin', 'june').str.replace('mai', 'may')
-    s = s.str.split(' à').str[0].str.strip()
-    return pd.to_datetime(s, errors='coerce', dayfirst=True).dt.date
+@st.cache_resource
+def init_supabase():
+    return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_SERVICE_KEY"])
 
 @st.cache_data(ttl=600)
 def get_data():
     client = init_supabase()
     response = client.table("Tenders Clean Data").select("*").execute()
     df = pd.DataFrame(response.data)
-    
-    if df.empty:
-        return df
-
-    # Colonnes techniques pour le filtrage (Gardent le type Date ou NaT)
-    df['pub_dt'] = clean_date_series(df['Date de publication'])
-    df['lim_dt'] = clean_date_series(df['Date de limite'])
-    
-    # On ne fait SURTOUT PAS fillna("") ici pour éviter l'erreur de type
-    return df
+    # Nettoyage global pour l'affichage (remplace NaNs par "-")
+    return df.fillna("-")
 
 df = get_data()
 
-# Filtrage sécurisé (les NaT sont ignorés automatiquement dans la comparaison)
-yesterday = TODAY - timedelta(days=1)
-three_days_limit = TODAY + timedelta(days=3)
-
-df_tout = df
-df_nouveaux = df[df['pub_dt'] == yesterday]
-df_urgent = df[(df['lim_dt'].notna()) & (df['lim_dt'] >= TODAY) & (df['lim_dt'] <= three_days_limit)]
-
 # ============================================
-# 4. INTERFACE
+# 4. EN-TÊTE
 # ============================================
-st.title("📊 Suivi des Appels d'Offres")
-
-t1, t2, t3 = st.tabs([f"Tout ({len(df_tout)})", f"Nouveaux ({len(df_nouveaux)})", f"Urgent ({len(df_urgent)})"])
-
-def render_table(data_df):
-    if data_df.empty:
-        st.info("Aucun résultat pour le moment.")
-        return None
-    
-    html = """<table class="saas-table">
-    <thead><tr><th>Acheteur</th><th>Titre</th><th>Publication</th><th>Limite</th><th>Budget</th></tr></thead>
-    <tbody>"""
-    
-    for _, row in data_df.head(15).iterrows():
-        # Gestion sécurisée des valeurs vides pour l'affichage
-        buyer = str(row['Client']) if pd.notna(row['Client']) else ""
-        init = buyer[0] if buyer else "?"
-        budget = str(row['Budget']) if pd.notna(row['Budget']) else "-"
-        date_pub = str(row['Date de publication']) if pd.notna(row['Date de publication']) else "-"
-        date_lim = str(row['Date de limite']) if pd.notna(row['Date de limite']) else "-"
-        
-        html += f"""
-        <tr>
-            <td><div class="logo-circle">{init}</div>{buyer}</td>
-            <td style="font-weight:500;">{str(row['Title'])[:75]}...</td>
-            <td style="color:#94A3B8;">{date_pub}</td>
-            <td style="color:#EF4444; font-weight:600;">{date_lim}</td>
-            <td style="color:#10B981; font-weight:600;">{budget}</td>
-        </tr>"""
-    html += "</tbody></table>"
-    st.markdown(html, unsafe_allow_html=True)
-    return data_df
-
-with t1: current_view = render_table(df_tout)
-with t2: current_view = render_table(df_nouveaux)
-with t3: current_view = render_table(df_urgent)
-
-# ============================================
-# 5. DÉTAILS
-# ============================================
-if current_view is not None and not current_view.empty:
-    st.write("")
-    selected_title = st.selectbox("🔍 Analyse détaillée de l'offre :", current_view['Title'].tolist())
-    item = current_view[current_view['Title'] == selected_title].iloc[0]
-    
-    # Remplissage des champs vides juste pour l'affichage du bloc détail
-    item = item.fillna("Non spécifié")
-
-    st.markdown(f"""
-    <div class="detail-box">
-        <div style="display: flex; justify-content: space-between; align-items: start;">
-            <h2 style="margin:0; color:#FFF;">{item['Title']}</h2>
-            <a href="{item['URL']}" target="_blank" style="background:#EF4444; color:white; padding:8px 18px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:0.9rem;">Consulter le document 🔗</a>
-        </div>
-        <p style="color:#94A3B8; margin-top:8px; font-size:1.1rem;">🏛️ {item['Client']} | 📍 {item['Localisation']}</p>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 20px 0;">
-            <div style="background:#334155; padding:15px; border-radius:8px;"><small style="color:#94A3B8;">Budget</small><br><b style="font-size:1.1rem;">{item['Budget']}</b></div>
-            <div style="background:#334155; padding:15px; border-radius:8px;"><small style="color:#94A3B8;">Caution</small><br><b style="font-size:1.1rem;">{item['Caution']}</b></div>
-            <div style="background:#334155; padding:15px; border-radius:8px;"><small style="color:#94A3B8;">Date Limite</small><br><b style="font-size:1.1rem;">{item['Date de limite']}</b></div>
-        </div>
-
-        <h4 style="color:#FFF; border-left: 4px solid #EF4444; padding-left:12px; margin-bottom:10px;">Description Technique</h4>
-        <p style="color:#CBD5E1; line-height:1.6; font-size:0.95rem;">{item['Description Technique']}</p>
-
-        <div class="ai-box">
-            <span style="color:#A78BFA; font-weight:bold; font-size:0.8rem;">✨ RÉSUMÉ ANALYTIQUE IA</span>
-            <p style="margin-top:10px; font-size:0.92rem; color:#E2E8F0; line-height:1.5;">
-                Analyse IA : Ce marché pour <b>{item['Client']}</b> présente des exigences spécifiques. 
-                Veuillez préparer votre réponse avant le {item['Date de limite']}.
-            </p>
-        </div>
-    </div>
+st.markdown('<h1 class="main-title">📊 Portail de Veille des Marchés Publics</h1>', unsafe_allow_html=True)
+st.markdown("""
+    <p class="intro-text">
+        Accédez à l'ensemble des appels d'offres en cours. Cette liste centralise les opportunités stratégiques 
+        avec les détails de budget, cautions et dates limites pour faciliter votre prise de décision.
+    </p>
     """, unsafe_allow_html=True)
+
+# ============================================
+# 5. RENDU DU TABLEAU UNIQUE
+# ============================================
+if df.empty:
+    st.warning("Aucune donnée disponible dans la base Supabase.")
+else:
+    # Construction du tableau en HTML pour un contrôle total du design
+    html_table = """
+    <table class="saas-table">
+        <thead>
+            <tr>
+                <th>Acheteur / Client</th>
+                <th>Titre de l'Appel d'Offre</th>
+                <th>Publication</th>
+                <th>Date Limite</th>
+                <th>Budget (TTC)</th>
+                <th>Caution</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+    """
+
+    for _, row in df.iterrows():
+        # Génération du logo (première lettre du client)
+        client_name = str(row['Client'])
+        initial = client_name[0] if client_name and client_name != "-" else "?"
+        
+        # Tronquer le titre s'il est trop long pour garder le tableau propre
+        title_display = str(row['Title'])
+        if len(title_display) > 85:
+            title_display = title_display[:82] + "..."
+
+        html_table += f"""
+        <tr>
+            <td>
+                <div style="display: flex; align-items: center;">
+                    <div class="logo-badge">{initial}</div>
+                    <span>{client_name}</span>
+                </div>
+            </td>
+            <td style="font-weight: 600; color: #F8FAFC;">{title_display}</td>
+            <td style="color: #94A3B8;">{row['Date de publication']}</td>
+            <td style="color: #F87171; font-weight: bold;">{row['Date de limite']}</td>
+            <td style="color: #10B981; font-weight: bold;">{row['Budget']}</td>
+            <td>{row['Caution']}</td>
+            <td>
+                <a class="btn-link" href="{row['URL']}" target="_blank">Ouvrir 🔗</a>
+            </td>
+        </tr>
+        """
+
+    html_table += "</tbody></table>"
+    
+    # Affichage du tableau
+    st.markdown(html_table, unsafe_allow_html=True)
+
+# ============================================
+# 6. FOOTER
+# ============================================
+st.markdown("<br><hr><center><small style='color: #475569;'>Mise à jour automatique via Supabase SQL</small></center>", unsafe_allow_html=True)
