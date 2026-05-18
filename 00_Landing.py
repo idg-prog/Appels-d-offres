@@ -743,6 +743,7 @@ if submitted:
                 
                 # Create the row list
                 # Create the row list
+                # Create the row list
                 raw_row = [
                     current_time, company_name, secteur_entreprise, ca_range,
                     age_entreprise, effectif, role_respondant,
@@ -752,10 +753,16 @@ if submitted:
                     q_ao_freq, q_ao_management, q_ao_time, final_ao_pain, q_ao_win_rate,
                     # AI Maturity
                     q_ai_usage, ai_tools_str, q_lowcode, q_data_infra, digital_tools_str,
-                    q_automation_type,  # <--- ADD THIS LINE HERE
+                    q_automation_type,  
                     # Pain points
                     final_top_pain, q_time_lost, q_priority_dept, q_existing_automation, q_dream_automation,
-                    # ... rest of your code
+                    # --- ADD THESE MISSING FIELDS BELOW ---
+                    q_budget,           # Column AC
+                    q_barrier,          # Column AD
+                    q_timeline,         # Column AE
+                    q_cps_ai,           # Column AF
+                    q_pilot,            # Column AG
+                    q_comment           # Column AH
                 ]
                                 
                 # Replacement sécurisé des champs laissés vides (None ou "")
