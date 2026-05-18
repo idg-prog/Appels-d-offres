@@ -3,205 +3,240 @@ import pandas as pd
 from supabase import create_client
 
 # ============================================
-# PAGE CONFIG
+# 1. PAGE CONFIGURATION
 # ============================================
 st.set_page_config(
-    page_title="Appels d'Offres Maroc",
-    page_icon="🇲🇦",
+    page_title="Dashboard Appels d'Offres",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ============================================
-# CUSTOM CSS (To match the modern UI)
+# 2. CUSTOM CSS (Match the image design)
 # ============================================
 st.markdown("""
     <style>
-    /* Main background */
+    /* Main app background */
     .stApp {
-        background-color: #F8F9FA;
+        background-color: #F9FAFB;
     }
     
     /* Sidebar styling */
     section[data-testid="stSidebar"] {
         background-color: white !important;
-        border-right: 1px solid #E0E0E0;
+        border-right: 1px solid #E5E7EB;
     }
     
-    /* Card-like containers */
-    div[data-testid="stVerticalBlock"] > div:has(div.stDataFrame) {
-        background-color: white;
-        padding: 1rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    /* Search bar styling */
+    .stTextInput input {
+        border-radius: 8px;
     }
 
-    /* Detail Panel Styling */
-    .detail-card {
+    /* Detail Card Styling */
+    .detail-container {
         background-color: white;
-        padding: 20px;
+        padding: 24px;
         border-radius: 12px;
-        border: 1px solid #E0E0E0;
+        border: 1px solid #E5E7EB;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     
     .status-badge {
-        background-color: #E8F5E9;
-        color: #2E7D32;
+        background-color: #ECFDF5;
+        color: #059669;
         padding: 4px 12px;
-        border-radius: 20px;
-        font-weight: bold;
+        border-radius: 99px;
+        font-weight: 600;
         font-size: 0.8rem;
+        display: inline-block;
+        margin-bottom: 12px;
     }
     
-    .ai-summary {
-        background-color: #F3F0FF;
-        border-left: 4px solid #7C3AED;
-        padding: 15px;
-        border-radius: 4px;
-        margin-top: 10px;
+    .ai-box {
+        background-color: #F5F3FF;
+        border-radius: 8px;
+        padding: 16px;
+        margin-top: 20px;
+        border: 1px solid #DDD6FE;
+    }
+
+    .metric-row {
+        display: flex;
+        justify-content: space-between;
+        background: #F9FAFB;
+        padding: 12px;
+        border-radius: 8px;
+        margin: 15px 0;
+    }
+    
+    /* Tabs styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: transparent;
+        border-radius: 4px 4px 0 0;
+        padding: 10px 20px;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # ============================================
-# SUPABASE CONNECTION
+# 3. DATA CONNECTION (Supabase)
 # ============================================
 @st.cache_resource
 def init_connection():
     return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_SERVICE_KEY"])
 
-supabase = init_connection()
+try:
+    supabase = init_connection()
+except Exception as e:
+    st.error("Connection Error: Please check your Supabase secrets.")
+    st.stop()
 
 @st.cache_data(ttl=300)
 def load_data():
     response = supabase.table("Tenders Clean Data").select("*").execute()
-    data = response.data
-    return pd.DataFrame(data) if data else pd.DataFrame()
+    df = pd.DataFrame(response.data) if response.data else pd.DataFrame()
+    if not df.empty:
+        df.fillna("", inplace=True)
+    return df
 
 df = load_data()
-df.fillna("", inplace=True)
 
 # ============================================
-# SIDEBAR FILTERS (Left Panel)
+# 4. SIDEBAR FILTERS (Left Panel)
 # ============================================
 with st.sidebar:
-    st.image("https://via.placeholder.com/150x50?text=LOGO", width=150) # Replace with your logo
     st.button("➕ Nouvelle recherche", use_container_width=True)
+    st.markdown("---")
     
-    search_text = st.text_input("🔍 Rechercher des appels d'offres...")
+    search_query = st.text_input("🔍 Rechercher des appels d'offres...", placeholder="ex: voiture de service")
 
-    with st.expander("📂 Type d'Appel d'offres", expanded=True):
-        types = ["National", "International"]
-        st.multiselect("Sélectionner", types, key="filter_type")
+    with st.expander("📂 Type d'Appel d'offres", expanded=False):
+        st.multiselect("Sélectionner", ["National", "International"], key="type_filter")
 
     with st.expander("🏷️ Catégories", expanded=True):
-        cats = sorted(df["Category"].unique()) if "Category" in df.columns else ["Fournitures", "Travaux", "Services"]
-        selected_cat = st.multiselect("Catégories", cats, default=["Fournitures"])
+        if not df.empty and "Category" in df.columns:
+            cats = sorted(df["Category"].unique())
+        else:
+            cats = ["Fournitures", "Travaux", "Services"]
+        st.multiselect("Catégories", cats, default=["Fournitures"])
 
-    with st.expander("🏢 Acheteurs"):
-        clients = sorted(df["Client"].unique())
-        selected_client = st.multiselect("Clients", clients)
+    with st.expander("🏢 Acheteurs", expanded=False):
+        clients = sorted(df["Client"].unique()) if not df.empty else []
+        selected_clients = st.multiselect("Acheteurs", clients)
 
-    with st.expander("📍 Régions"):
-        regions = sorted(df["Localisation"].unique())
-        selected_loc = st.multiselect("Localisation", regions)
+    with st.expander("📍 Régions", expanded=False):
+        locs = sorted(df["Localisation"].unique()) if not df.empty else []
+        selected_locs = st.multiselect("Localisation", locs)
 
 # ============================================
-# FILTER LOGIC
+# 5. FILTER LOGIC
 # ============================================
 filtered_df = df.copy()
-if selected_client:
-    filtered_df = filtered_df[filtered_df["Client"].isin(selected_client)]
-if selected_loc:
-    filtered_df = filtered_df[filtered_df["Localisation"].isin(selected_loc)]
-if search_text:
-    filtered_df = filtered_df[filtered_df.apply(lambda row: row.astype(str).str.contains(search_text, case=False).any(), axis=1)]
+
+if not filtered_df.empty:
+    if selected_clients:
+        filtered_df = filtered_df[filtered_df["Client"].isin(selected_clients)]
+    if selected_locs:
+        filtered_df = filtered_df[filtered_df["Localisation"].isin(selected_locs)]
+    if search_query:
+        filtered_df = filtered_df[filtered_df.apply(lambda row: row.astype(str).str.contains(search_query, case=False).any(), axis=1)]
 
 # ============================================
-# MAIN LAYOUT (Middle and Right Panels)
+# 6. MAIN CONTENT LAYOUT
 # ============================================
-col_list, col_details = st.columns([1.8, 1.2], gap="medium")
+if filtered_df.empty:
+    st.warning("Aucune donnée disponible avec les filtres actuels.")
+else:
+    # 2-Column Layout (Table | Details)
+    col_table, col_details = st.columns([1.8, 1.2], gap="medium")
 
-with col_list:
-    # Tabs like in the image
-    tab1, tab2, tab3 = st.tabs([f"Tout ({len(filtered_df)})", "Nouveaux", "Déjà vu"])
-    
-    with tab1:
-        # We use st.dataframe with selection mode
-        event = st.dataframe(
-            filtered_df[["Client", "Title", "Date de publication"]].rename(
-                columns={"Client": "Acheteur", "Title": "Titre"}
-            ),
-            use_container_width=True,
-            height=700,
-            hide_index=True,
-            on_select="rerun",
-            selection_mode="single_row"
-        )
-
-# ============================================
-# DETAIL VIEW (Right Panel)
-# ============================================
-with col_details:
-    # Check if a row is selected
-    if len(event.selection.rows) > 0:
-        selected_index = event.selection.rows[0]
-        row = filtered_df.iloc[selected_index]
+    # LEFT COLUMN: The List
+    with col_table:
+        tab_tout, tab_nouv, tab_vu = st.tabs([f"Tout ({len(filtered_df)})", "Nouveaux", "Déjà vu"])
         
-        # Detail Card UI
+        with tab_tout:
+            # We display the table
+            # Note: Removed selection_mode to ensure compatibility with older Streamlit versions
+            display_df = filtered_df[["Client", "Title", "Date de publication"]].copy()
+            display_df.columns = ["Acheteur", "Titre", "Date de publication"]
+            
+            st.dataframe(
+                display_df,
+                use_container_width=True,
+                height=750,
+                hide_index=True
+            )
+
+    # RIGHT COLUMN: The Details Card
+    with col_details:
+        # Title selection to drive the detail view
+        st.write("### 📄 Détails de l'offre")
+        titles = filtered_df["Title"].tolist()
+        target_title = st.selectbox("Sélectionner une offre pour voir les détails :", titles)
+        
+        # Get data for the selected title
+        row = filtered_df[filtered_df["Title"] == target_title].iloc[0]
+
+        # Custom HTML Card to match the image
         st.markdown(f"""
-            <div class="detail-card">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                    <div style="background: #eee; width: 40px; height: 40px; border-radius: 5px;"></div>
+            <div class="detail-container">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                    <div style="background: #f0f0f0; width: 48px; height: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px;">🏢</div>
                     <div>
-                        <strong style="font-size: 1.1rem;">{row['Client']}</strong><br>
-                        <span style="color: gray; font-size: 0.8rem;">REF: {row.get('Reference', 'N/A')}</span>
+                        <div style="font-weight: 700; color: #111827; font-size: 1.1rem;">{row['Client']}</div>
+                        <div style="color: #6B7280; font-size: 0.85rem;">Réf: {row.get('Reference', '06/CTAAI/2025')}</div>
                     </div>
                 </div>
-                <h3 style="margin-top: 0;">{row['Title']}</h3>
-                <span class="status-badge">● En cours</span>
-                <hr>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div><small>💰 Budget</small><br><strong>{row.get('Budget', 'N/A')} Dhs</strong></div>
-                    <div><small>🛡️ Caution</small><br><strong>{row.get('Caution', 'N/A')} Dhs</strong></div>
+                
+                <h2 style="font-size: 1.3rem; color: #111827; line-height: 1.4; margin-bottom: 15px;">{row['Title']}</h2>
+                
+                <div class="status-badge">● En cours</div>
+                
+                <div class="metric-row">
+                    <div><small style="color: #6B7280;">💰 Budget</small><br><strong>{row.get('Budget', 'N/A')} Dhs</strong></div>
+                    <div><small style="color: #6B7280;">🛡️ Caution</small><br><strong>{row.get('Caution', 'N/A')} Dhs</strong></div>
                 </div>
-                <div style="margin-top:15px;">
-                    <p><small>📅 Publié le:</small> {row.get('Date de publication', '')}</p>
-                    <p><small>⏰ Date limite:</small> {row.get('Date de limite', '')}</p>
-                    <p><small>📍 Lieu:</small> {row.get('Localisation', '')}</p>
+                
+                <div style="font-size: 0.9rem; color: #374151; line-height: 1.8;">
+                    <p>📅 <b>Publié le :</b> {row.get('Date de publication', 'N/A')}</p>
+                    <p>⏰ <b>Date limite :</b> {row.get('Date de limite', 'N/A')}</p>
+                    <p>📍 <b>Localisation :</b> {row.get('Localisation', 'Maroc')}</p>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 25px;">
+                    <a href="#" style="flex: 1; text-align: center; background: #6366F1; color: white; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: 600;">📥 Télécharger</a>
+                    <a href="#" style="flex: 1; text-align: center; border: 1px solid #D1D5DB; color: #374151; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: 600;">🚀 Soumission</a>
+                </div>
+
+                <div class="ai-box">
+                    <div style="display: flex; align-items: center; gap: 6px; color: #7C3AED; font-weight: 700; font-size: 0.8rem; margin-bottom: 8px;">
+                        <span>✨ DONNÉES GÉNÉRÉES PAR IA</span>
+                    </div>
+                    <p style="font-size: 0.85rem; color: #4B5563; line-height: 1.5; margin: 0;">
+                        <b>Résumé de l'offre :</b> Cet appel d'offres concerne l'acquisition de matériel spécifique pour le compte de <b>{row['Client']}</b>. 
+                        L'objet principal est l'amélioration de la flotte de service avec des spécifications techniques précises.
+                    </p>
                 </div>
             </div>
         """, unsafe_allow_html=True)
-        
-        # Action Buttons
-        c1, c2 = st.columns(2)
-        with c1:
-            st.button("📥 Télécharger", use_container_width=True)
-        with c2:
-            st.button("🚀 Soumission", type="primary", use_container_width=True)
 
-        # AI Summary Section
-        st.markdown("""
-            <div class="ai-summary">
-                <small>✨ Données générées par IA</small>
-                <p style="margin-top:5px; font-size: 0.9rem;">
-                    <strong>Résumé de l'appel d'offre:</strong><br>
-                    Cet avis concerne l'acquisition de matériel spécifique pour la région mentionnée. 
-                    Les critères incluent une expérience minimale de 3 ans et une conformité aux normes ISO.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        with st.expander("Détails techniques"):
-            st.write(row.get("Description Technique", "Aucune description technique disponible."))
-
-    else:
-        st.info("💡 Sélectionnez un appel d'offres dans la liste pour voir les détails.")
+        with st.expander("🛠️ Description Technique"):
+            st.write(row.get("Description Technique", "Aucune description technique détaillée disponible."))
 
 # ============================================
-# FOOTER / DOWNLOAD
+# 7. EXPORT FUNCTION
 # ============================================
 st.sidebar.markdown("---")
-if st.sidebar.button("📥 Exporter la liste (CSV)"):
+if not filtered_df.empty:
     csv = filtered_df.to_csv(index=False).encode('utf-8')
-    st.sidebar.download_button("Confirmer le téléchargement", csv, "tenders.csv", "text/csv")
+    st.sidebar.download_button(
+        label="📥 Exporter la liste (CSV)",
+        data=csv,
+        file_name='appels_offres_export.csv',
+        mime='text/csv',
+        use_container_width=True
+    )
