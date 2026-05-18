@@ -38,8 +38,9 @@ def get_ai_extraction(text, retries=3):
     ### FORMATTING RULES:
     1. **Dates**: Always use DD/MM/YYYY. Convert month names to numbers (e.g., 'June' -> '06'). Remove hours (e.g., '10h00').
     2. **Budget & Caution**: Return ONLY "Number Currency". Remove text like "TTC", "per year", or explanations. Example: "150000 MAD".
-    3. **Tags**: Select 1 to 3 relevant categories from the ALLOWED LIST below.
+    3. **Tags**: Select 1 relevant categories from the ALLOWED LIST below.
     4. **Return format**: Valid JSON only. No markdown (no ```).
+    5.**Language** : Always the output need to be in French language
     
     REQUIRED FIELDS:
     - Title
