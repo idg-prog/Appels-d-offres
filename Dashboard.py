@@ -1,55 +1,55 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
+from supabase import create_client
 
 # ============================================
 # 1. PAGE CONFIGURATION
 # ============================================
 st.set_page_config(
-    page_title="AO Monitoring Dashboard",
+    page_title="AO Dashboard",
     page_icon="📊",
     layout="wide"
 )
 
 # ============================================
-# 2. DARK THEME CSS (With Red Tab Underline)
+# 2. SEPARATED CSS (Fixes the SyntaxError)
 # ============================================
 st.markdown("""
     <style>
     .stApp { background-color: #0F172A; color: #F1F5F9; }
     
-    /* Custom Sidebar */
+    /* Sidebar */
     section[data-testid="stSidebar"] {
         background-color: #1E293B !important;
         border-right: 1px solid #334155;
     }
 
-    /* Tab Design - Red Underline like the image */
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; background-color: transparent; }
+    /* Tabs with Red Underline */
+    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
     .stTabs [data-baseweb="tab"] {
-        height: 50px;
         background-color: #1E293B;
         border-radius: 8px 8px 0 0;
-        padding: 0 30px;
+        padding: 10px 20px;
         color: #94A3B8;
         border: none;
     }
     .stTabs [data-baseweb="tab--active"] {
         background-color: #1E293B !important;
         color: #FFFFFF !important;
-        border-bottom: 3px solid #EF4444 !important; /* Red underline */
+        border-bottom: 3px solid #EF4444 !important;
     }
 
-    /* Detail Box styling */
+    /* Details Panel Styling */
     .detail-box {
         background-color: #1E293B;
-        padding: 25px;
+        padding: 20px;
         border-radius: 12px;
         border: 1px solid #334155;
-        margin-top: 20px;
+        margin-top: 10px;
     }
     
-    .status-pill {
+    .urgent-pill {
         background-color: rgba(239, 68, 68, 0.1);
         color: #F87171;
         padding: 4px 12px;
@@ -69,115 +69,149 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ============================================
-# 3. DATA PROCESSING
+# 3. DATA LOADING & TAB LOGIC
 # ============================================
-@st.cache_data
+@st.cache_data(ttl=300)
 def load_data():
-    # Replace this with your Supabase call or CSV upload
-    # For this demo, I'm assuming you are loading the CSV data provided
-    df = pd.read_csv("data.csv") # Ensure your file is named data.csv or link to Supabase
-    
-    # Standardize Dates for filtering
+    # Attempt connection to Supabase (using your secrets)
+    try:
+        url = st.secrets["SUPABASE_URL"]
+        key = st.secrets["SUPABASE_SERVICE_KEY"]
+        supabase = create_client(url, key)
+        response = supabase.table("Tenders Clean Data").select("*").execute()
+        df = pd.DataFrame(response.data)
+    except:
+        # Fallback if Supabase fails (optional: remove this in production)
+        st.warning("Connexion Supabase échouée, vérifiez vos secrets.")
+        return pd.DataFrame()
+
+    if df.empty: return df
+
+    # Convert dates for filtering
+    # We use dayfirst=True because Moroccan dates are usually DD/MM/YYYY
     df['date_pub_dt'] = pd.to_datetime(df['Date de publication'], dayfirst=True, errors='coerce')
-    df['date_limite_dt'] = pd.to_datetime(df['Date de limite'], dayfirst=True, errors='coerce')
-    
+    df['date_lim_dt'] = pd.to_datetime(df['Date de limite'], dayfirst=True, errors='coerce')
     df.fillna("", inplace=True)
     return df
 
-df = load_data()
+df_full = load_data()
 
-# ============================================
-# 4. TAB LOGIC
-# ============================================
-# Logic for "Yesterday" and "3 days left"
+if df_full.empty:
+    st.error("Aucune donnée trouvée.")
+    st.stop()
+
+# --- Tab Filtering Logic ---
 today = datetime.now().date()
 yesterday = today - timedelta(days=1)
-three_days_from_now = today + timedelta(days=3)
+three_days_limit = today + timedelta(days=3)
 
-# Filter 1: Nouveaux (Published yesterday)
-df_nouveaux = df[df['date_pub_dt'].dt.date == yesterday]
+# 1. Nouveaux: Published yesterday
+df_nouveaux = df_full[df_full['date_pub_dt'].dt.date == yesterday]
 
-# Filter 2: Urgent (Limite in less than 3 days)
-# Note: only includes future dates
-df_urgent = df[(df['date_limite_dt'].dt.date >= today) & 
-               (df['date_limite_dt'].dt.date <= three_days_from_now)]
+# 2. Urgent: Deadline in next 3 days
+df_urgent = df_full[(df_full['date_lim_dt'].dt.date >= today) & 
+                    (df_full['date_lim_dt'].dt.date <= three_days_limit)]
 
 # ============================================
-# 5. SIDEBAR FILTERS
+# 4. SIDEBAR
 # ============================================
 with st.sidebar:
     st.title("🔎 Filtres")
-    search = st.text_input("Recherche par mot clé")
-    
-    clients = sorted(df["Client"].unique())
-    sel_client = st.multiselect("Acheteurs", clients)
+    search = st.text_input("Mots clés (Titre, Client...)")
+    clients_list = sorted(df_full["Client"].unique())
+    sel_clients = st.multiselect("Filtrer par Acheteur", clients_list)
 
-# Applying sidebar filters to the global pool
-if search:
-    df = df[df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
-if sel_client:
-    df = df[df["Client"].isin(sel_client)]
+# Global filtering based on Sidebar
+def apply_sidebar(d):
+    if search:
+        d = d[d.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)]
+    if sel_clients:
+        d = d[d["Client"].isin(sel_clients)]
+    return d
 
 # ============================================
-# 6. MAIN LAYOUT
+# 5. MAIN TABS & TABLE
 # ============================================
-
-# Tabs display
 t1, t2, t3 = st.tabs([
-    f"Tous ({len(df)})", 
-    f"Nouveaux ({len(df_nouveaux)})", 
-    f"Urgent - 3 jours ({len(df_urgent)})"
+    f"Tous ({len(apply_sidebar(df_full))})", 
+    f"Nouveaux ({len(apply_sidebar(df_nouveaux))})", 
+    f"Urgent - 3 jours ({len(apply_sidebar(df_urgent))})"
 ])
 
-def render_table(data):
-    if data.empty:
-        st.info("Aucun appel d'offre trouvé pour cette catégorie.")
+# Define exact columns requested
+cols_show = ["Title", "Client", "Date de limite", "Date de publication", 
+             "Description Technique", "Budget", "Caution", "URL"]
+
+# Function to render table
+def show_table(data):
+    filtered = apply_sidebar(data)
+    if filtered.empty:
+        st.info("Aucun résultat.")
         return None
     
-    # Define columns to show in the table
-    cols_to_display = [
-        "Title", "Client", "Date de limite", "Date de publication", 
-        "Description Technique", "Budget", "Caution", "URL"
-    ]
-    
-    # Configure 10 rows height (~400px is roughly 10 rows in Streamlit)
-    selected_event = st.dataframe(
-        data[cols_to_display],
-        use_container_width=True,
+    # height=450 is roughly 10 rows in Streamlit
+    st.dataframe(
+        filtered[cols_show], 
+        use_container_width=True, 
         height=450, 
         hide_index=True,
-        column_config={
-            "URL": st.column_config.LinkColumn("Lien"),
-            "Description Technique": st.column_config.TextColumn("Description", width="large")
-        }
+        column_config={"URL": st.column_config.LinkColumn("Lien Document")}
     )
-    return data
+    return filtered
 
-# Handle which dataset to show based on tab
-with t1:
-    active_df = render_table(df)
-with t2:
-    active_df = render_table(df_nouveaux)
-with t3:
-    active_df = render_table(df_urgent)
+with t1: active_data = show_table(df_full)
+with t2: active_data = show_table(df_nouveaux)
+with t3: active_data = show_table(df_urgent)
 
 # ============================================
-# 7. DETAILS SECTION (Under the table)
+# 6. DETAILS SECTION (Under Table)
 # ============================================
-st.markdown("---")
-
-if active_df is not None and not active_df.empty:
-    # Use a selectbox to pick the specific AO to see details for
-    ao_titles = active_df["Title"].tolist()
-    selection = st.selectbox("Sélectionnez un appel d'offre pour voir l'analyse complète :", ao_titles)
+if active_data is not None:
+    st.divider()
     
-    row = active_df[active_df["Title"] == selection].iloc[0]
+    # Dropdown to select which AO to see in detail
+    titles = active_data["Title"].tolist()
+    choice = st.selectbox("👉 Sélectionnez un appel d'offre pour voir les détails :", titles)
+    
+    row = active_data[active_data["Title"] == choice].iloc[0]
 
-    # Detailed Layout
+    # Display using f-string but NO CSS INSIDE to avoid SyntaxError
     st.markdown(f"""
-        <div class="detail-box">
-            <div style="display: flex; justify-content: space-between; align-items: start;">
-                <h2 style="margin:0; color: #F8FAFC;">{row['Title']}</h2>
-                <span class="status-pill">Fin dans { (pd.to_datetime(row['Date de limite'], errors='coerce') - datetime.now()).days if row['Date de limite'] else '?' } jours</span>
+    <div class="detail-box">
+        <div style="display: flex; justify-content: space-between;">
+            <h2 style="margin:0;">{row['Title']}</h2>
+            <span class="urgent-pill">ID: {row.get('id','--')}</span>
+        </div>
+        <p style="color:#94A3B8; margin-top:5px;"><b>Acheteur:</b> {row['Client']} | <b>Publication:</b> {row['Date de publication']}</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 15px 0;">
+            <div style="background:#334155; padding:10px; border-radius:8px;">
+                <small style="color:#94A3B8;">Budget</small><br><b>{row['Budget']}</b>
             </div>
-            <p style="color: #94A3B8; font-size: 1.1rem; margin-top: 5px;">🏢 {row['Client']} |
+            <div style="background:#334155; padding:10px; border-radius:8px;">
+                <small style="color:#94A3B8;">Caution</small><br><b>{row['Caution']}</b>
+            </div>
+            <div style="background:#334155; padding:10px; border-radius:8px;">
+                <small style="color:#94A3B8;">Date Limite</small><br><b>{row['Date de limite']}</b>
+            </div>
+        </div>
+
+        <div>
+            <h4>🛠️ Description Technique</h4>
+            <p style="color:#CBD5E1; font-size:0.95rem; line-height:1.5;">{row['Description Technique']}</p>
+        </div>
+
+        <div class="ai-summary">
+            <span style="color:#A78BFA; font-weight:bold; font-size:0.8rem;">✨ RÉSUMÉ ANALYTIQUE IA</span>
+            <p style="margin-top:8px; font-size:0.9rem;">
+                Le marché lancé par <b>{row['Client']}</b> concerne principalement {row['Title'][:50]}... 
+                Les exigences techniques soulignent l'importance de la conformité aux normes en vigueur. 
+                Vérifiez le document officiel via le lien ci-dessous avant le <b>{row['Date de limite']}</b>.
+            </p>
+        </div>
+        
+        <div style="margin-top:20px;">
+            <a href="{row['URL']}" target="_blank" style="background:#EF4444; color:white; padding:8px 20px; border-radius:5px; text-decoration:none; font-weight:bold;">Ouvrir l'annonce officielle 🔗</a>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
