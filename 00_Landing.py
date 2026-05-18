@@ -501,8 +501,6 @@ with st.container():
             label_visibility="collapsed",
             placeholder="Choisissez vos secteurs cibles…"
         )
-        Email_Newsletter =  st.text_input("Email de réception des appels d’offres *", placeholder="")
-
     q_ao_freq = st.selectbox("Combien d'AO soumettez-vous en moyenne par mois ?",[
         "Nous ne participons pas encore aux AO",
         "1 à 3 AO/mois", "4 à 10 AO/mois", "Plus de 10 AO/mois",
