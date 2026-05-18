@@ -748,7 +748,7 @@ if submitted:
                     # Budget & decision
                     q_budget, q_decision_maker, q_barrier, q_timeline,
                     # Interest
-                    q_cps_ai, q_pilot, q_source, q_comment, Email_Newsletter
+                    q_cps_ai, q_pilot, q_source, q_comment
                 ]
                 
                 # Replacement sécurisé des champs laissés vides (None ou "")
