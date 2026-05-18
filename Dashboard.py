@@ -44,34 +44,33 @@ st.markdown("""
     }
     .stTabs [data-baseweb="tab-border"] { display: none; }
     
-    .main-title { font-size: 2.5rem; font-weight: 800; color: #FFFFFF; margin-bottom: 10px; }
+    .main-title { font-size: 2.2rem; font-weight: 800; color: #FFFFFF; margin-bottom: 10px; }
     .intro-container {
         background: #1E293B;
-        padding: 20px;
+        padding: 15px;
         border-radius: 12px;
         border-left: 5px solid #EF4444;
-        margin-bottom: 30px;
+        margin-bottom: 25px;
     }
-    .intro-text { color: #CBD5E1; font-size: 1.05rem; line-height: 1.6; }
+    .intro-text { color: #CBD5E1; font-size: 1rem; line-height: 1.5; }
 
     .footer-contact {
         background: linear-gradient(135deg, #1E293B 0%, #111827 100%);
-        padding: 40px;
+        padding: 30px;
         border-radius: 20px;
         border: 1px solid #334155;
         text-align: center;
-        margin-top: 50px;
-        margin-bottom: 20px;
+        margin-top: 40px;
     }
     .contact-button {
         background-color: #EF4444;
         color: white !important;
-        padding: 14px 32px;
-        border-radius: 10px;
+        padding: 12px 28px;
+        border-radius: 8px;
         text-decoration: none;
         font-weight: bold;
         display: inline-block;
-        margin-top: 15px;
+        margin-top: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -124,17 +123,17 @@ def build_html_table(data_df):
             <td class="tag-cell"><span class="tag-badge">{tags}</span></td>
             <td class="primary-col"><span class="expand-icon">▶</span> {title}</td>
             <td class="muted">{client}</td>
+            <td class="muted">{loc}</td>
             <td class="muted">{pub}</td>
             <td class="urgent">{lim}</td>
             <td class="success">{budget}</td>
             <td class="muted">{caution}</td>
-            <td class="muted">{loc}</td>
         </tr>
         <tr id="details-{idx}" class="details-row" style="display: none;">
             <td colspan="8">
                 <div class="expanded-content">
-                    <div class="expanded-section"><span class="label">📌 Titre Complet</span><div class="content-text">{title}</div></div>
-                    <div class="expanded-section"><span class="label">🛠️ Spécifications Techniques</span><div class="content-text">{desc}</div></div>
+                    <div class="expanded-section"><span class="label">📌 Descriptif du Marché</span><div class="content-text">{title}</div></div>
+                    <div class="expanded-section"><span class="label">🛠️ Détails IA</span><div class="content-text">{desc}</div></div>
                     <div style="margin-top:20px;">
                         <a class="btn-link" href="{link}" target="_blank">Accéder au Document Source 🔗</a>
                     </div>
@@ -145,7 +144,7 @@ def build_html_table(data_df):
 
     return f"""
     <style>
-        body {{ background-color: #0F172A; color: #F1F5F9; font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }}
+        body {{ background-color: #0F172A; color: #F1F5F9; font-family: 'Inter', sans-serif; margin: 0; overflow: hidden; }}
         
         .saas-table {{ 
             width: 100%; 
@@ -157,38 +156,38 @@ def build_html_table(data_df):
         
         .saas-table thead th {{ 
             position: sticky; top: 0; background-color: #111827; z-index: 10;
-            text-align: left; padding: 15px; color: #94A3B8; font-size: 10px; 
+            text-align: left; padding: 12px 10px; color: #94A3B8; font-size: 9px; 
             text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #475569;
         }}
         
-        .saas-table td {{ padding: 12px 15px; border-bottom: 1px solid #334155; font-size: 12px; color: #CBD5E1; vertical-align: top; }}
+        .saas-table td {{ padding: 10px; border-bottom: 1px solid #334155; font-size: 11px; color: #CBD5E1; vertical-align: top; word-wrap: break-word; overflow: hidden; }}
         .saas-table tr:hover {{ background-color: #26334D; }}
         
-        /* Ajustement des colonnes pour éviter le scroll horizontal */
-        th:nth-child(1), td:nth-child(1) {{ width: 140px; }} /* Domaines */
-        th:nth-child(2), td:nth-child(2) {{ width: 230px; }} /* Titre */
-        th:nth-child(3), td:nth-child(3) {{ width: 150px; }} /* Acheteur */
-        th:nth-child(4), td:nth-child(4) {{ width: 85px; }}  /* Pub */
-        th:nth-child(5), td:nth-child(5) {{ width: 85px; }}  /* Échéance */
-        th:nth-child(6), td:nth-child(6) {{ width: 110px; }} /* Budget */
-        th:nth-child(7), td:nth-child(7) {{ width: 80px; }}  /* Caution */
-        th:nth-child(8), td:nth-child(8) {{ width: 100px; }} /* Lieu */
+        /* RÉGLAGE DES LARGEURS POUR TOUT FAIRE TENIR (TOTAL 100%) */
+        th:nth-child(1), td:nth-child(1) {{ width: 110px; }} /* Domaines */
+        th:nth-child(2), td:nth-child(2) {{ width: 220px; }} /* Titre */
+        th:nth-child(3), td:nth-child(3) {{ width: 140px; }} /* Acheteur */
+        th:nth-child(4), td:nth-child(4) {{ width: 100px; }} /* Lieu (Ré-ajouté) */
+        th:nth-child(5), td:nth-child(5) {{ width: 75px; }}  /* Pub. */
+        th:nth-child(6), td:nth-child(6) {{ width: 75px; }}  /* Échéance */
+        th:nth-child(7), td:nth-child(7) {{ width: 100px; }} /* Budget */
+        th:nth-child(8), td:nth-child(8) {{ width: 70px; }}  /* Caution */
 
-        .primary-col {{ font-weight: 600; color: #FFFFFF; line-height: 1.4; }}
+        .primary-col {{ font-weight: 600; color: #FFFFFF; line-height: 1.3; }}
         .tag-badge {{
-            background: #0F172A; color: #EF4444; padding: 3px 7px; border-radius: 5px;
-            font-size: 10px; font-weight: bold; border: 1px solid #EF4444; display: inline-block;
+            background: #0F172A; color: #EF4444; padding: 2px 5px; border-radius: 4px;
+            font-size: 9px; font-weight: bold; border: 1px solid #EF4444; display: inline-block;
         }}
-        .expand-icon {{ color: #EF4444; font-size: 9px; margin-right: 4px; }}
+        .expand-icon {{ color: #EF4444; font-size: 8px; margin-right: 3px; }}
         .urgent {{ color: #F87171; font-weight: bold; }}
         .success {{ color: #10B981; font-weight: bold; }}
-        .muted {{ color: #94A3B8; font-size: 11px; }}
+        .muted {{ color: #94A3B8; font-size: 10.5px; }}
         
         .details-row {{ background-color: #111827 !important; }}
-        .expanded-content {{ padding: 20px 40px; border-left: 4px solid #EF4444; }}
-        .label {{ color: #94A3B8; text-transform: uppercase; font-size: 10px; font-weight: bold; }}
-        .content-text {{ font-size: 13px; margin-top: 5px; color: #E2E8F0; line-height: 1.6; white-space: normal; }}
-        .btn-link {{ background-color: #EF4444; color: white !important; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; display: inline-block; }}
+        .expanded-content {{ padding: 20px 30px; border-left: 4px solid #EF4444; }}
+        .label {{ color: #94A3B8; text-transform: uppercase; font-size: 9px; font-weight: bold; }}
+        .content-text {{ font-size: 12.5px; margin-top: 5px; color: #E2E8F0; line-height: 1.5; white-space: normal; }}
+        .btn-link {{ background-color: #EF4444; color: white !important; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-size: 11px; font-weight: bold; display: inline-block; }}
     </style>
     
     <table class="saas-table">
@@ -197,11 +196,11 @@ def build_html_table(data_df):
                 <th>Domaines</th>
                 <th>Titre du Marché</th>
                 <th>Acheteur</th>
+                <th>Lieu</th>
                 <th>Pub.</th>
                 <th>Échéance</th>
                 <th>Budget</th>
                 <th>Caution</th>
-                <th>Lieu</th>
             </tr>
         </thead>
         <tbody>{table_rows}</tbody>
@@ -223,9 +222,9 @@ st.markdown('<h1 class="main-title">Intelligence & Veille Appels d\'Offres</h1>'
 st.markdown(f"""
     <div class="intro-container">
         <div class="intro-text">
-            Bienvenue sur votre portail de monitoring stratégique. Les opportunités sont classées par domaine pour une lecture immédiate. 
-            Cliquez sur une ligne pour voir le <b>descriptif technique</b> et le <b>lien source</b>.
-            <br><small>Date : {TODAY.strftime("%d/%m/%Y")}</small>
+            <b>Monitoring Stratégique :</b> Tous les marchés publics en un coup d'œil. 
+            Cliquez sur une ligne pour voir les <b>détails techniques</b> et le <b>lien source</b>.
+            <br><small>Mise à jour : {TODAY.strftime("%d/%m/%Y")}</small>
         </div>
     </div>
 """, unsafe_allow_html=True)
@@ -251,9 +250,9 @@ else:
 # ============================================
 st.markdown(f"""
     <div class="footer-contact">
-        <h2 style="color:white;">🚀 Vous voulez plus d'automatisations IA ?</h2>
-        <p style="color:#94A3B8;">Besoin d'un outil sur mesure, d'extraction de données complexe ou d'agents IA intelligents ?</p>
+        <h3 style="color:white; margin-bottom:5px;">🚀 Vous voulez plus d'automatisations IA ?</h3>
+        <p style="color:#94A3B8; font-size:0.9rem;">Besoin d'un outil sur mesure ou d'extraction de données complexe ?</p>
         <a href="mailto:anaslachhab666@gmail.com" class="contact-button">📩 Me contacter par Email</a>
     </div>
-    <center><small style='color: #475569; padding-bottom:20px;'>Optimisé pour la prise de décision • © 2026 Strategy Monitor</small></center>
+    <center><small style='color: #475569; padding: 20px 0; display:block;'>© 2026 Strategy Monitor</small></center>
 """, unsafe_allow_html=True)
