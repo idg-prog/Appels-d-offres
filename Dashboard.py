@@ -39,11 +39,14 @@ for i, row in df.iterrows():
     
     link = url if url.startswith('http') else f"https://{url}"
 
-    # On crée une ligne principale et une ligne de détails cachée
     table_rows += f"""
     <tr onclick="toggleDetails({i})" style="cursor: pointer;">
         <td class="client-column">{client}</td>
-        <td class="title-column"><div class="truncate">{title}</div></td>
+        <td class="title-column">
+            <div class="truncate">
+                <span class="expand-icon">▶</span> {title}
+            </div>
+        </td>
         <td>{pub}</td>
         <td class="urgent">{lim}</td>
         <td class="success">{budget}</td>
@@ -55,13 +58,19 @@ for i, row in df.iterrows():
         <td colspan="8">
             <div class="expanded-content">
                 <div class="expanded-section">
-                    <strong>📌 Titre complet :</strong><br>{title}
+                    <span class="label">📌 Titre intégral</span><br>
+                    <div class="content-text">{title}</div>
                 </div>
                 <div class="expanded-section">
-                    <strong>🏢 Acheteur :</strong> {client}
+                    <span class="label">🏢 Acheteur</span><br>
+                    <div class="content-text">{client}</div>
                 </div>
                 <div class="expanded-section">
-                    <strong>🛠️ Description Technique complète :</strong><br>{desc}
+                    <span class="label">🛠️ Description Technique détaillée</span><br>
+                    <div class="content-text">{desc}</div>
+                </div>
+                <div style="margin-top:10px;">
+                    <a class="btn-link" href="{link}" target="_blank">Accéder au document officiel 🔗</a>
                 </div>
             </div>
         </td>
@@ -103,37 +112,44 @@ full_html = f"""
     }}
     .saas-table tr:hover {{ background-color: #26334D; }}
 
-    /* Troncature pour la vue compacte */
+    .expand-icon {{
+        color: #EF4444;
+        font-size: 10px;
+        margin-right: 5px;
+        transition: transform 0.2s;
+    }}
+
     .truncate {{
-        max-width: 300px;
+        max-width: 350px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }}
 
-    .client-column {{ font-weight: 500; color: #F1F5F9; width: 200px; }}
+    .client-column {{ font-weight: 500; color: #F1F5F9; width: 220px; }}
     .title-column {{ font-weight: 600; color: #FFFFFF; }}
     .urgent {{ color: #F87171; font-weight: bold; }}
     .success {{ color: #10B981; font-weight: bold; }}
     
-    /* Style du contenu étendu */
-    .details-row {{
-        background-color: #111827 !important;
-    }}
+    .details-row {{ background-color: #111827 !important; }}
     .expanded-content {{
-        padding: 20px;
+        padding: 25px;
         color: #F1F5F9;
         line-height: 1.6;
         border-left: 4px solid #EF4444;
     }}
-    .expanded-section {{
-        margin-bottom: 15px;
-        font-size: 14px;
-    }}
-    .expanded-section strong {{
+    .expanded-section {{ margin-bottom: 20px; }}
+    .label {{
         color: #94A3B8;
         text-transform: uppercase;
-        font-size: 11px;
+        font-size: 10px;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }}
+    .content-text {{
+        font-size: 14px;
+        margin-top: 5px;
+        color: #E2E8F0;
     }}
 
     .btn-link {{
@@ -144,6 +160,7 @@ full_html = f"""
         text-decoration: none;
         font-size: 11px;
         font-weight: bold;
+        display: inline-block;
     }}
 </style>
 
@@ -180,13 +197,18 @@ function toggleDetails(id) {{
 # ============================================
 # 3. INTERFACE STREAMLIT
 # ============================================
-st.markdown('<h1 style="color:white; font-size: 2.2rem; font-weight:800; margin-bottom:0;">📊 Dashboard Appels d\'Offres Interactif</h1>', unsafe_allow_html=True)
-st.markdown('<p style="color:#94A3B8; font-size:1.1rem; margin-bottom:25px;">Cliquez sur n\'importe quelle ligne pour dérouler les détails complets (Description, Titre entier, etc.).</p>', unsafe_allow_html=True)
+st.markdown('<h1 style="color:white; font-size: 2.2rem; font-weight:800; margin-bottom:0;">📊 Suivi des Appels d\'Offres</h1>', unsafe_allow_html=True)
+st.markdown("""
+    <p style="color:#94A3B8; font-size:1.1rem; margin-top:10px;">
+        💡 <b>Astuce :</b> Cliquez sur n'importe quelle ligne du tableau pour <b>dérouler les informations complètes</b> 
+        (Titre intégral, Description technique détaillée, etc.).
+    </p>
+""", unsafe_allow_html=True)
 
 if df.empty:
     st.warning("Aucune donnée disponible.")
 else:
-    # On ajuste la hauteur du composant pour laisser de la place au déploiement
-    components.html(full_html, height=800, scrolling=True)
+    # Affichage du composant HTML
+    components.html(full_html, height=850, scrolling=True)
 
 st.markdown("<center><small style='color: #475569;'>Base de données synchronisée en temps réel • Supabase SQL</small></center>", unsafe_allow_html=True)
