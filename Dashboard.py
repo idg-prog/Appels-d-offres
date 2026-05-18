@@ -263,13 +263,18 @@ st.markdown('<h1 class="main-title">📊 Intelligence & Veille Appels d\'Offres<
 st.markdown(f"""
     <div class="intro-container">
         <div class="intro-text">
-            Bienvenue sur votre portail de monitoring stratégique. Les opportunités sont classées par domaine pour une meilleure visibilité.
-            <br>
-            <small>Date du jour : {TODAY.strftime("%d/%m/%Y")}</small>
+            Bienvenue sur votre portail de monitoring stratégique. Cette interface centralise l'ensemble des marchés publics 
+            détectés. Les opportunités sont automatiquement analysées et classées pour optimiser votre réactivité.
+            <br><br>
+            🚀 <b>Comment utiliser ce tableau :</b>
+            <ul>
+                <li>Utilisez les <b>onglets</b> pour filtrer les nouveaux marchés de la veille ou les dossiers urgents.</li>
+                <li>Cliquez sur n'importe quelle ligne pour <b>dérouler les détails techniques</b> et le résumé de l'offre.</li>
+            </ul>
+            <small>Date : {TODAY.strftime("%d/%m/%Y")}</small>
         </div>
     </div>
 """, unsafe_allow_html=True)
-
 if df_raw.empty:
     st.warning("Aucune donnée disponible.")
 else:
