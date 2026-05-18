@@ -9,7 +9,6 @@ from supabase import create_client
 # ============================================
 st.set_page_config(page_title="AO Strategic Monitoring", layout="wide")
 
-# Date de référence (18 Mai 2026)
 TODAY = datetime(2026, 5, 18).date()
 YESTERDAY = TODAY - timedelta(days=1)
 URGENT_DEADLINE = TODAY + timedelta(days=3)
@@ -21,7 +20,6 @@ st.markdown("""
     <style>
     .stApp { background-color: #0F172A; color: #F1F5F9; }
 
-    /* DESIGN DES ONGLETS */
     .stTabs [data-baseweb="tab-list"] {
         gap: 12px;
         background-color: transparent;
@@ -37,10 +35,7 @@ st.markdown("""
         transition: all 0.3s ease;
         font-weight: 600;
     }
-    .stTabs [data-baseweb="tab"]:hover {
-        color: #F1F5F9;
-        border-color: #EF4444;
-    }
+    .stTabs [data-baseweb="tab"]:hover { color: #F1F5F9; border-color: #EF4444; }
     .stTabs [data-baseweb="tab--active"] {
         background-color: #EF4444 !important;
         color: #FFFFFF !important;
@@ -49,7 +44,6 @@ st.markdown("""
     }
     .stTabs [data-baseweb="tab-border"] { display: none; }
     
-    /* STYLE DE L'INTRODUCTION */
     .main-title { font-size: 2.5rem; font-weight: 800; color: #FFFFFF; margin-bottom: 10px; }
     .intro-container {
         background: #1E293B;
@@ -60,7 +54,6 @@ st.markdown("""
     }
     .intro-text { color: #CBD5E1; font-size: 1.05rem; line-height: 1.6; }
 
-    /* SECTION CONTACT FOOTER */
     .footer-contact {
         background: linear-gradient(135deg, #1E293B 0%, #111827 100%);
         padding: 40px;
@@ -70,8 +63,6 @@ st.markdown("""
         margin-top: 50px;
         margin-bottom: 20px;
     }
-    .footer-contact h2 { color: white; margin-bottom: 10px; font-size: 1.8rem; }
-    .footer-contact p { color: #94A3B8; margin-bottom: 25px; font-size: 1.1rem; }
     .contact-button {
         background-color: #EF4444;
         color: white !important;
@@ -79,15 +70,8 @@ st.markdown("""
         border-radius: 10px;
         text-decoration: none;
         font-weight: bold;
-        font-size: 16px;
         display: inline-block;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
-    }
-    .contact-button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
-        color: white !important;
+        margin-top: 15px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -118,7 +102,7 @@ def get_data():
 df_raw = get_data()
 
 # ============================================
-# 4. GÉNÉRATION DU TABLEAU HTML (AVEC TAGS)
+# 4. GÉNÉRATION DU TABLEAU HTML
 # ============================================
 def build_html_table(data_df):
     if data_df.empty:
@@ -130,38 +114,30 @@ def build_html_table(data_df):
             v = row.get(col, "-")
             return v if pd.notna(v) and str(v).lower() != "nan" else "-"
 
-        client = val('Client')
-        title = val('Title')
-        pub = val('Date de publication')
-        lim = val('Date de limite')
-        budget = val('Budget')
-        caution = val('Caution')
-        loc = val('Localisation')
-        tags = val('Tags')
-        desc = val('Description Technique')
-        url = val('URL')
+        client, title, pub, lim = val('Client'), val('Title'), val('Date de publication'), val('Date de limite')
+        budget, caution, loc, tags, desc, url = val('Budget'), val('Caution'), val('Localisation'), val('Tags'), val('Description Technique'), val('URL')
         
         link = url if str(url).startswith('http') else f"https://{url}" if url != "-" else "#"
 
         table_rows += f"""
         <tr onclick="toggleDetails({idx})" style="cursor: pointer;">
-            <td class="primary-col">{client}</td>
-            <td class="primary-col"><span class="expand-icon">▶</span> {title}</td>
             <td class="tag-cell"><span class="tag-badge">{tags}</span></td>
+            <td class="primary-col"><span class="expand-icon">▶</span> {title}</td>
+            <td class="muted">{client}</td>
             <td class="muted">{pub}</td>
             <td class="urgent">{lim}</td>
             <td class="success">{budget}</td>
             <td class="muted">{caution}</td>
             <td class="muted">{loc}</td>
-            <td><a class="btn-link" href="{link}" target="_blank">Ouvrir</a></td>
         </tr>
         <tr id="details-{idx}" class="details-row" style="display: none;">
-            <td colspan="9">
+            <td colspan="8">
                 <div class="expanded-content">
-                    <div class="expanded-section"><span class="label">📌 Analyse du Titre</span><div class="content-text">{title}</div></div>
-                    <div class="expanded-section"><span class="label">🏷️ Domaines</span><div class="content-text">{tags}</div></div>
+                    <div class="expanded-section"><span class="label">📌 Titre Complet</span><div class="content-text">{title}</div></div>
                     <div class="expanded-section"><span class="label">🛠️ Spécifications Techniques</span><div class="content-text">{desc}</div></div>
-                    <div style="margin-top:10px;"><a class="btn-link" href="{link}" target="_blank">Accéder au Document Source 🔗</a></div>
+                    <div style="margin-top:20px;">
+                        <a class="btn-link" href="{link}" target="_blank">Accéder au Document Source 🔗</a>
+                    </div>
                 </div>
             </td>
         </tr>
@@ -169,7 +145,7 @@ def build_html_table(data_df):
 
     return f"""
     <style>
-        body {{ background-color: #0F172A; color: #F1F5F9; font-family: 'Inter', sans-serif; margin: 0; }}
+        body {{ background-color: #0F172A; color: #F1F5F9; font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }}
         
         .saas-table {{ 
             width: 100%; 
@@ -180,73 +156,57 @@ def build_html_table(data_df):
         }}
         
         .saas-table thead th {{ 
-            position: sticky; 
-            top: 0; 
-            background-color: #111827; 
-            z-index: 10;
-            text-align: left; 
-            padding: 18px 15px; 
-            color: #94A3B8; 
-            font-size: 10px; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            border-bottom: 2px solid #475569;
+            position: sticky; top: 0; background-color: #111827; z-index: 10;
+            text-align: left; padding: 15px; color: #94A3B8; font-size: 10px; 
+            text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #475569;
         }}
         
-        .saas-table td {{ padding: 16px 15px; border-bottom: 1px solid #334155; font-size: 13px; color: #CBD5E1; vertical-align: top; }}
+        .saas-table td {{ padding: 12px 15px; border-bottom: 1px solid #334155; font-size: 12px; color: #CBD5E1; vertical-align: top; }}
         .saas-table tr:hover {{ background-color: #26334D; }}
         
-        .primary-col {{ font-weight: 600; color: #FFFFFF; line-height: 1.4; word-wrap: break-word; white-space: normal; }}
-        
-        /* Ajustement des largeurs pour inclure la colonne TAGS */
-        th:nth-child(1), td:nth-child(1) {{ width: 180px; }} /* Acheteur */
-        th:nth-child(2), td:nth-child(2) {{ width: 200px; }} /* Titre */
-        th:nth-child(3), td:nth-child(3) {{ width: 150px; }} /* Tags/Domaines */
-        th:nth-child(4), td:nth-child(4) {{ width: 90px; }}  /* Pub */
-        th:nth-child(5), td:nth-child(5) {{ width: 90px; }}  /* Limite */
+        /* Ajustement des colonnes pour éviter le scroll horizontal */
+        th:nth-child(1), td:nth-child(1) {{ width: 140px; }} /* Domaines */
+        th:nth-child(2), td:nth-child(2) {{ width: 230px; }} /* Titre */
+        th:nth-child(3), td:nth-child(3) {{ width: 150px; }} /* Acheteur */
+        th:nth-child(4), td:nth-child(4) {{ width: 85px; }}  /* Pub */
+        th:nth-child(5), td:nth-child(5) {{ width: 85px; }}  /* Échéance */
         th:nth-child(6), td:nth-child(6) {{ width: 110px; }} /* Budget */
-        th:nth-child(7), td:nth-child(7) {{ width: 90px; }}  /* Caution */
+        th:nth-child(7), td:nth-child(7) {{ width: 80px; }}  /* Caution */
         th:nth-child(8), td:nth-child(8) {{ width: 100px; }} /* Lieu */
-        th:nth-child(9), td:nth-child(9) {{ width: 80px; }}  /* Action */
 
+        .primary-col {{ font-weight: 600; color: #FFFFFF; line-height: 1.4; }}
         .tag-badge {{
-            background: #334155;
-            color: #EF4444;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: bold;
-            border: 1px solid #475569;
-            display: inline-block;
+            background: #0F172A; color: #EF4444; padding: 3px 7px; border-radius: 5px;
+            font-size: 10px; font-weight: bold; border: 1px solid #EF4444; display: inline-block;
         }}
-
         .expand-icon {{ color: #EF4444; font-size: 9px; margin-right: 4px; }}
         .urgent {{ color: #F87171; font-weight: bold; }}
         .success {{ color: #10B981; font-weight: bold; }}
-        .muted {{ color: #94A3B8; font-size: 12px; }}
+        .muted {{ color: #94A3B8; font-size: 11px; }}
         
         .details-row {{ background-color: #111827 !important; }}
-        .expanded-content {{ padding: 25px; border-left: 4px solid #EF4444; }}
+        .expanded-content {{ padding: 20px 40px; border-left: 4px solid #EF4444; }}
         .label {{ color: #94A3B8; text-transform: uppercase; font-size: 10px; font-weight: bold; }}
-        .content-text {{ font-size: 14px; margin-top: 5px; color: #E2E8F0; line-height: 1.6; }}
-        .btn-link {{ background-color: #EF4444; color: white !important; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: bold; display: inline-block; }}
+        .content-text {{ font-size: 13px; margin-top: 5px; color: #E2E8F0; line-height: 1.6; white-space: normal; }}
+        .btn-link {{ background-color: #EF4444; color: white !important; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; display: inline-block; }}
     </style>
+    
     <table class="saas-table">
         <thead>
             <tr>
-                <th>Acheteur</th>
-                <th>Titre</th>
                 <th>Domaines</th>
+                <th>Titre du Marché</th>
+                <th>Acheteur</th>
                 <th>Pub.</th>
                 <th>Échéance</th>
                 <th>Budget</th>
                 <th>Caution</th>
                 <th>Lieu</th>
-                <th>Lien</th>
             </tr>
         </thead>
         <tbody>{table_rows}</tbody>
     </table>
+    
     <script>
     function toggleDetails(id) {{
         var element = document.getElementById('details-' + id);
@@ -263,18 +223,13 @@ st.markdown('<h1 class="main-title">Intelligence & Veille Appels d\'Offres</h1>'
 st.markdown(f"""
     <div class="intro-container">
         <div class="intro-text">
-            Bienvenue sur votre portail de monitoring stratégique. Cette interface centralise l'ensemble des marchés publics 
-            détectés. Les opportunités sont automatiquement analysées et classées pour optimiser votre réactivité.
-            <br><br>
-            🚀 <b>Comment utiliser ce tableau :</b>
-            <ul>
-                <li>Utilisez les <b>onglets</b> pour filtrer les nouveaux marchés de la veille ou les dossiers urgents.</li>
-                <li>Cliquez sur n'importe quelle ligne pour <b>dérouler les détails techniques</b> et le résumé de l'offre.</li>
-            </ul>
-            <small>Date : {TODAY.strftime("%d/%m/%Y")}</small>
+            Bienvenue sur votre portail de monitoring stratégique. Les opportunités sont classées par domaine pour une lecture immédiate. 
+            Cliquez sur une ligne pour voir le <b>descriptif technique</b> et le <b>lien source</b>.
+            <br><small>Date : {TODAY.strftime("%d/%m/%Y")}</small>
         </div>
     </div>
 """, unsafe_allow_html=True)
+
 if df_raw.empty:
     st.warning("Aucune donnée disponible.")
 else:
@@ -296,9 +251,9 @@ else:
 # ============================================
 st.markdown(f"""
     <div class="footer-contact">
-        <h2>🚀 Vous voulez plus d'automatisations IA ?</h2>
-        <p>Besoin d'un outil sur mesure, d'extraction de données complexe ou d'agents IA intelligents ?</p>
+        <h2 style="color:white;">🚀 Vous voulez plus d'automatisations IA ?</h2>
+        <p style="color:#94A3B8;">Besoin d'un outil sur mesure, d'extraction de données complexe ou d'agents IA intelligents ?</p>
         <a href="mailto:anaslachhab666@gmail.com" class="contact-button">📩 Me contacter par Email</a>
     </div>
-    <center><small style='color: #475569;'>Optimisé pour la prise de décision • © 2026 Strategy Monitor</small></center>
+    <center><small style='color: #475569; padding-bottom:20px;'>Optimisé pour la prise de décision • © 2026 Strategy Monitor</small></center>
 """, unsafe_allow_html=True)
