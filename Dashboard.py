@@ -3,16 +3,12 @@ import pandas as pd
 from supabase import create_client
 
 # ============================================
-# 1. CONFIGURATION DE LA PAGE
+# 1. CONFIGURATION
 # ============================================
-st.set_page_config(
-    page_title="AO Monitoring",
-    page_icon="📊",
-    layout="wide"
-)
+st.set_page_config(page_title="AO Monitoring", layout="wide")
 
 # ============================================
-# 2. STYLE CSS (Indépendant pour éviter les bugs)
+# 2. DESIGN CSS (DARK SAAS PROFESSIONNEL)
 # ============================================
 st.markdown("""
     <style>
@@ -21,11 +17,10 @@ st.markdown("""
     .main-title { font-size: 2.2rem; font-weight: 800; color: #FFFFFF; margin-bottom: 5px; }
     .intro-text { color: #94A3B8; margin-bottom: 30px; font-size: 1.1rem; }
 
-    /* Conteneur du tableau */
+    /* Conteneur pour le défilement horizontal */
     .table-container {
         width: 100%;
         overflow-x: auto;
-        background-color: #1E293B;
         border-radius: 12px;
         border: 1px solid #334155;
     }
@@ -33,12 +28,13 @@ st.markdown("""
     .saas-table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 1000px;
+        background-color: #1E293B;
+        min-width: 1100px; /* Force la largeur pour éviter l'écrasement */
     }
 
     .saas-table thead {
         background-color: #111827;
-        border-bottom: 2px solid #334155;
+        border-bottom: 2px solid #475569;
     }
 
     .saas-table th {
@@ -55,22 +51,22 @@ st.markdown("""
         border-bottom: 1px solid #334155;
         font-size: 0.9rem;
         color: #CBD5E1;
+        vertical-align: middle;
     }
 
     .saas-table tr:hover { background-color: #26334D; }
 
     .logo-badge {
-        width: 32px; height: 32px; border-radius: 6px;
+        width: 30px; height: 30px; border-radius: 6px;
         background: #475569; display: inline-flex;
         align-items: center; justify-content: center;
         font-weight: bold; margin-right: 12px; color: white;
-        flex-shrink: 0;
     }
 
     .btn-link {
         background-color: #EF4444;
         color: white !important;
-        padding: 8px 16px;
+        padding: 8px 14px;
         border-radius: 6px;
         text-decoration: none;
         font-size: 0.8rem;
@@ -98,49 +94,51 @@ df = get_data()
 # 4. EN-TÊTE
 # ============================================
 st.markdown('<h1 class="main-title">📊 Suivi Centralisé des Appels d\'Offres</h1>', unsafe_allow_html=True)
-st.markdown('<p class="intro-text">Bienvenue sur votre interface de veille. Vous trouverez ci-dessous la liste exhaustive des marchés publics avec leurs détails financiers et les échéances de soumission.</p>', unsafe_allow_html=True)
+st.markdown('<p class="intro-text">Plateforme de veille stratégique. Consultez les détails financiers et les échéances de soumission des derniers marchés publics.</p>', unsafe_allow_html=True)
 
 # ============================================
-# 5. CONSTRUCTION DU TABLEAU (HTML UNIQUE)
+# 5. CONSTRUCTION DU TABLEAU HTML
 # ============================================
 if df.empty:
     st.warning("Aucune donnée disponible.")
 else:
-    # On commence la chaîne HTML
+    # --- DÉBUT DU TABLEAU ---
     html_code = """
     <div class="table-container">
         <table class="saas-table">
             <thead>
                 <tr>
-                    <th>Acheteur / Client</th>
-                    <th>Titre du Marché</th>
+                    <th style="width: 200px;">Acheteur / Client</th>
+                    <th style="width: 400px;">Titre du Marché</th>
                     <th>Publication</th>
                     <th>Échéance</th>
                     <th>Budget</th>
                     <th>Caution</th>
-                    <th>Action</th>
+                    <th>Lien</th>
                 </tr>
             </thead>
             <tbody>
     """
 
     for _, row in df.iterrows():
-        # Nettoyage des données
-        client = str(row.get('Client', '-'))
-        title = str(row.get('Title', '-'))
-        pub = str(row.get('Date de publication', '-'))
-        lim = str(row.get('Date de limite', '-'))
-        budget = str(row.get('Budget', '-'))
-        caution = str(row.get('Caution', '-'))
-        url = str(row.get('URL', '#'))
+        # Nettoyage des valeurs 'nan' de Pandas
+        def clean(val):
+            return str(val) if pd.notna(val) and str(val).lower() != "nan" else "-"
 
-        # Initiale pour le badge
+        client = clean(row.get('Client'))
+        title = clean(row.get('Title'))
+        pub = clean(row.get('Date de publication'))
+        lim = clean(row.get('Date de limite'))
+        budget = clean(row.get('Budget'))
+        caution = clean(row.get('Caution'))
+        url = clean(row.get('URL'))
+
+        # Fix pour les liens sans protocole
+        link_url = url if url.startswith('http') else f"https://{url}" if url != "-" else "#"
+
         initial = client[0] if client != "-" else "?"
-        
-        # Limite de caractères pour le titre
-        title_short = (title[:85] + '..') if len(title) > 85 else title
+        title_short = (title[:85] + '...') if len(title) > 85 else title
 
-        # Ajout de la ligne au HTML
         html_code += f"""
             <tr>
                 <td>
@@ -154,21 +152,20 @@ else:
                 <td style="color: #F87171; font-weight: bold;">{lim}</td>
                 <td style="color: #10B981; font-weight: bold;">{budget}</td>
                 <td>{caution}</td>
-                <td><a class="btn-link" href="{url}" target="_blank">Ouvrir 🔗</a></td>
+                <td><a class="btn-link" href="{link_url}" target="_blank">Ouvrir 🔗</a></td>
             </tr>
         """
 
-    # Fermeture des balises
     html_code += """
             </tbody>
         </table>
     </div>
     """
 
-    # L'INSTRUCTION CRUCIALE : On affiche le HTML final
+    # Rendu final
     st.markdown(html_code, unsafe_allow_html=True)
 
 # ============================================
 # 6. FOOTER
 # ============================================
-st.markdown("<br><center><small style='color: #475569;'>Données synchronisées en temps réel</small></center>", unsafe_allow_html=True)
+st.markdown("<br><center><small style='color: #475569;'>Mise à jour automatique • Supabase SQL</small></center>", unsafe_allow_html=True)
