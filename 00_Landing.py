@@ -759,7 +759,20 @@ if submitted:
                 # Append the row to the worksheet
                 worksheet_gs.append_row(row_to_insert)
 
-            st.success("✅ Inscription validée ! Vous recevrez vos premiers Appels d'Offres ciblés prochainement.")
+            st.success("✅ Inscription validée ! Votre accès est maintenant activé.")
+            
+            st.markdown(f"""
+                <div style="background: rgba(230, 49, 83, 0.1); border: 1px solid #e63153; padding: 24px; border-radius: 12px; text-align: center; margin-top: 20px; animation: pageIn 0.6s ease-out;">
+                    <h3 style="color: #f87196; margin-top: 0;">🚀 Prêt à explorer ?</h3>
+                    <p style="color: #e8e8f0; font-size: 1rem; margin-bottom: 20px;">
+                        Votre profil a été configuré. Vous pouvez dès maintenant consulter les appels d'offres en cours sur votre tableau de bord en temps réel.
+                    </p>
+                    <a href="https://appels-d-offres-dashbord.streamlit.app/" target="_blank" 
+                       style="display: inline-block; background: linear-gradient(135deg, #e63153 0%, #c91d41 100%); color: white !important; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: bold; font-family: 'Inter', sans-serif; letter-spacing: 0.05em; text-transform: uppercase; box-shadow: 0 4px 15px rgba(230,49,83,0.3);">
+                       Ouvrir le Tableau de Bord 📊
+                    </a>
+                </div>
+            """, unsafe_allow_html=True)
         except Exception as e:
             st.error(f"Une erreur est survenue lors de l'enregistrement. Réessayez ou contactez-nous. Détails : {e}")
 
