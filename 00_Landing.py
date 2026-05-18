@@ -560,11 +560,11 @@ with st.container():
     q_ai_tools = st.multiselect("Quels outils IA utilisez-vous actuellement ? (plusieurs choix possibles)",[
         "ChatGPT / GPT-4", "Claude (Anthropic)", "Gemini (Google)",
         "Copilot (Microsoft)", "Midjourney / DALL-E (images)",
-        "Outils IA intégrés dans des logiciels métiers",
+        "Outils IA intégrés dans des logiciels métiers","Ollama / LLM Local","Deepseek / Qween",
         "IA développée en interne", "Aucun outil IA pour l'instant",
     ], placeholder="Sélectionnez…")
 
-    q_lowcode = st.radio("Connaissez-vous les outils d'automatisation Low-Code (n8n, Make, Zapier…) ?",[
+    q_lowcode = st.radio("Connaissez-vous les outils d'automatisation Low-Code (n8n, Make, Zapier, ServiceNow…) ?",[
         "Non, première fois que j'en entends parler",
         "Oui de nom, mais sans utilisation concrète",
         "Oui, nous les utilisons occasionnellement",
@@ -580,6 +580,14 @@ with st.container():
     ], index=None)
 
     q_digital_tools =  st.text_input("Quels outils digitaux sont déjà en place dans votre entreprise ? *", placeholder="")
+
+    q_automation_type = st.selectbox("Quelle est votre vision de l'automatisation ?", [
+        "Agile & API-first (ex: n8n, Make) — Priorité à la vitesse et au coût",
+        "Enterprise Service Management (ex: ServiceNow) — Priorité à la gouvernance",
+        "RPA / Legacy (ex: UiPath) — Automatisation de logiciels sans API",
+        "Custom Code (ex: Python/GitHub Actions) — Priorité à la personnalisation"
+    ], index=None, placeholder="Choisissez une approche...")
+    
     
     # ── BLOCK D : PAIN POINTS ──
     st.markdown("""
@@ -590,7 +598,7 @@ with st.container():
     </div>
     """, unsafe_allow_html=True)
 
-    q_top_pain = st.text_input("Quel est votre problèmes opérationnelles actuellement ? *", placeholder="Décrivez votre situation...")
+    q_top_pain = st.text_input("QQuel est votre principal problème opérationnel actuellement ? *", placeholder="Décrivez votre situation...")
 
     q_time_lost = st.selectbox("Combien d'heures par semaine estimez-vous perdre sur des tâches manuelles ?",[
         "Moins de 5 heures",
@@ -701,7 +709,7 @@ if submitted:
     required_fields =[
         company_name, secteur_entreprise, email, phone, city, effectif,
         age_entreprise, ca_range, role_respondant, tags, 
-        q_digital_tools, q_dream_automation
+        q_digital_tools, q_dream_automation, q_automation_type
     ]
     # Add q_ao_pain_autre to required fields if "Autre" is selected for q_ao_pain
     if q_ao_pain == "Autre":
@@ -734,23 +742,22 @@ if submitted:
                 q_source = ""
                 
                 # Create the row list
-                raw_row =[
+                # Create the row list
+                raw_row = [
                     current_time, company_name, secteur_entreprise, ca_range,
                     age_entreprise, effectif, role_respondant,
                     website, city, email, phone,
                     secteurs_ao_str,
                     # AO Process
-                    q_ao_freq, q_ao_management, q_ao_time, final_ao_pain, q_ao_win_rate, # Use final_ao_pain here
+                    q_ao_freq, q_ao_management, q_ao_time, final_ao_pain, q_ao_win_rate,
                     # AI Maturity
                     q_ai_usage, ai_tools_str, q_lowcode, q_data_infra, digital_tools_str,
+                    q_automation_type,  # <--- ADD THIS LINE HERE
                     # Pain points
                     final_top_pain, q_time_lost, q_priority_dept, q_existing_automation, q_dream_automation,
-                    # Budget & decision
-                    q_budget, q_decision_maker, q_barrier, q_timeline,
-                    # Interest
-                    q_cps_ai, q_pilot, q_source, q_comment
+                    # ... rest of your code
                 ]
-                
+                                
                 # Replacement sécurisé des champs laissés vides (None ou "")
                 row_to_insert =[str(val) if (val is not None and val != "") else "Non renseigné" for val in raw_row]
 
