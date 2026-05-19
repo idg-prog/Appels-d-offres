@@ -71,7 +71,7 @@ def get_ai_extraction(text, retries=3):
     4. Localisation : "Ville, Maroc". Si la ville est inconnue, écris "Maroc".
     5. Langue : TOUT le contenu doit être en Français.
     
-    RETOURNE UNIQUEMENT UN OBJET JSON :
+    LIRE LE TEXT EXTRAIT ET RETOURNE UNIQUEMENT CES INFORMATIONS EN OBJET JSON :
     {{
         "Title": "...",
         "Date_publication": "...",
