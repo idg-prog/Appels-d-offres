@@ -414,6 +414,8 @@ st.markdown("""
       <li><strong style="color:#e8e8f0">L’organisme émetteur</strong></li>
       <li><strong style="color:#e8e8f0">Le budget estimé</strong></li>
       <li><strong style="color:#e8e8f0">La caution</strong></li>
+      <li><strong style="color:#e8e8f0">Description du l'offre</strong></li>
+      <li><strong style="color:#e8e8f0">Lien direct</strong></li>
     </ul>
     En échange, aidez-nous à cartographier la maturité digitale des entreprises marocaines.
 </div>
