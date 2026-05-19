@@ -364,7 +364,8 @@ finally:
             # Prepare the data to match your Supabase columns
             # We map your existing keys to the database columns
             data_to_insert = {
-                "Date": tender.get("date_limite"),
+                #"Date": tender.get("date_limite"),
+                "Date": datetime.today().strftime("%Y-%m-%d"),
                 "Title": tender.get("objet"),
                 "URL": tender.get("first_button_url"),
                 "Extracted_Text": tender.get("merged_text"),
