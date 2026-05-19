@@ -9,7 +9,7 @@ from supabase import create_client
 # ============================================
 st.set_page_config(page_title="AO Strategic Monitoring", layout="wide")
 
-TODAY = datetime(2026, 5, 18).date()
+TODAY = datetime.today().date()
 YESTERDAY = TODAY - timedelta(days=1)
 URGENT_DEADLINE = TODAY + timedelta(days=3)
 
