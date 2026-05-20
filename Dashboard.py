@@ -73,16 +73,30 @@ def get_data():
         response = client.table("Tenders Clean Data").select("*").execute()
         df = pd.DataFrame(response.data)
         if df.empty: return df
+        
+        # -------------------------------------------------------------
+        # 🔥 THE FIX: Strip spaces and drop rows containing "EMPTY" text
+        # -------------------------------------------------------------
+        # 1. Clean up text formatting across the entire dataframe
+        df = df.astype(str).apply(lambda x: x.str.strip())
+        
+        # 2. Drop rows where critical columns have the literal word 'EMPTY'
+        # This fixes rows 8, 9, 12, 13 from your image
+        df = df[df['Date de limite'] != 'EMPTY']
+        df = df[df['Title'] != 'EMPTY'] 
+        # -------------------------------------------------------------
+
         df['pub_dt'] = clean_date_series(df['Date de publication'])
         df['lim_dt'] = clean_date_series(df['Date de limite'])
+        
         # Nettoyage des colonnes pour filtres
-        df['Tags'] = df['Tags'].fillna('Non classé')
-        df['Localisation'] = df['Localisation'].fillna('Maroc')
+        df['Tags'] = df['Tags'].replace('EMPTY', 'Non classé').fillna('Non classé')
+        df['Localisation'] = df['Localisation'].replace('EMPTY', 'Maroc').fillna('Maroc')
         return df
     except Exception as e:
         st.error(f"Erreur Supabase : {e}")
         return pd.DataFrame()
-
+        
 df_raw = get_data()
 
 # ============================================
