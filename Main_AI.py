@@ -14,6 +14,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+YESTERDAY = TODAY - timedelta(days=1)
+
 # --- Configuration & Environment Check ---
 URL = os.environ.get("SUPABASE_URL")
 KEY = os.environ.get("SUPABASE_SERVICE_KEY")
@@ -153,7 +155,7 @@ def main():
 
             structured_data = {
                 "Title": extracted.get("Title", "Sans titre"),
-                "Date de publication": extracted.get("Date_publication"),
+                "Date de publication": YESTERDAY.strftime("%d/%m/%Y"),
                 "Client": extracted.get("Client"),
                 "Localisation": extracted.get("Localisation"),
                 "Date de limite": extracted.get("Date_limite"),
