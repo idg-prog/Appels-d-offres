@@ -6,6 +6,7 @@ import re
 import logging
 from supabase import create_client, Client
 from openai import OpenAI, RateLimitError
+from datetime import datetime, timedelta
 
 # --- Logging Configuration ---
 logging.basicConfig(
@@ -13,7 +14,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
-
+TODAY = datetime.today().date()
 YESTERDAY = TODAY - timedelta(days=1)
 
 # --- Configuration & Environment Check ---
