@@ -404,7 +404,7 @@ st.markdown("""
 </div>
 <div class="hero-sub">
     Accédez aux marchés publics de <strong style="color:#e8e8f0">Marchespublics</strong>, <strong style="color:#e8e8f0">Tanmia</strong>, <strong style="color:#e8e8f0">CDG</strong>, 
-    <strong style="color:#e8e8f0">Bank Al-Maghrib</strong>, <strong style="color:#e8e8f0">ONCF</strong>, <strong style="color:#e8e8f0">RAM</strong>, <strong style="color:#e8e8f0">United Nations</strong>, ... directement dans votre boîte mail, filtrés selon votre secteur, <strong style="color:#e8e8f0">chaque matin à 8:00h (GMT+1).</strong> 
+    <strong style="color:#e8e8f0">Bank Al-Maghrib</strong>, <strong style="color:#e8e8f0">ONCF</strong>, <strong style="color:#e8e8f0">RAM</strong>, <strong style="color:#e8e8f0">United Nations</strong>, ... 
     <br>
     Chaque appel d’offres inclut :
     <ul>
@@ -494,7 +494,7 @@ with st.container():
     
         st.markdown("""
             <div class="ao-box-title">Ciblage de vos Appels d'Offres</div>
-            <div class="ao-box-desc">Sélectionnez un ou plusieurs secteurs. Vous recevrez uniquement les AO correspondants, chaque matin par email.</div>
+            <div class="ao-box-desc">Sélectionnez un ou plusieurs secteurs</div>
         """, unsafe_allow_html=True)
     
         tags = st.multiselect(
