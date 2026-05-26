@@ -1,0 +1,17 @@
+name: Keep Streamlit Apps Alive
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping App 1
+        run: curl -I https://appels-d-offres-dashbord.streamlit.app/
+
+      - name: Ping App 2
+        run: curl -I https://appels-d-offres.streamlit.app/
