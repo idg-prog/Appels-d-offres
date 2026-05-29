@@ -94,6 +94,12 @@ def get_data():
         return pd.DataFrame()
         
 df_raw = get_data()
+# Sort by publication date (newest first)
+df_raw = df_raw.sort_values(
+    by='pub_dt',
+    ascending=False,
+    na_position='last'
+)
 
 # ============================================
 # 4. FONCTION DE FILTRAGE STREAMLIT
