@@ -427,15 +427,18 @@ st.markdown("""
 </strong>
 et d'autres grandes institutions publiques et privées.<br><br>
 
-<div class="hero-sub">
-    En échange, aidez-nous à cartographier la maturité digitale des entreprises marocaines.
-</div>
+
 """, unsafe_allow_html=True)
+
 st.markdown("""
 <div class="stat-row">
     <div class="stat-item"><div class="stat-num">2 400+</div><div class="stat-label">AO publiés chaque mois</div></div>
     <div class="stat-item"><div class="stat-num">100%</div><div class="stat-label">Gratuit pour les entreprises</div></div>
     <div class="stat-item"><div class="stat-num">&lt; 2 min</div><div class="stat-label">Pour paramétrer vos alertes</div></div>
+</div>
+<br><br>
+<div class="hero-sub">
+    En échange, aidez-nous à cartographier la maturité digitale des entreprises marocaines.
 </div>
 """, unsafe_allow_html=True)
 
