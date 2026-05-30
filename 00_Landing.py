@@ -419,6 +419,16 @@ st.markdown("""
   <li><strong style="color:#e8e8f0">Lien direct</strong></li>
 </ul>
 
+<span style="color:#f87196;">
+    🚀 Prochainement :
+</span>
+<strong style="color:#e8e8f0">
+    UN, CDG, Bank Al-Maghrib, Danaone
+</strong>
+et d'autres grandes institutions publiques et privées.
+
+<br><br>
+
 <div class="hero-sub">
     En échange, aidez-nous à cartographier la maturité digitale des entreprises marocaines.
 </div>
