@@ -420,10 +420,10 @@ st.markdown("""
 </ul>
 
 <span style="color:#f87196;">
-    🚀 Prochainement :
+    Prochainement :
 </span>
 <strong style="color:#e8e8f0">
-    UN, CDG, Bank Al-Maghrib, Danaone
+    CDG, Bank Al-Maghrib, CNSS, OFPPT, ONCF, OCP
 </strong>
 et d'autres grandes institutions publiques et privées.
 
