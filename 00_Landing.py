@@ -708,7 +708,7 @@ with st.container():
     )
 
     submitted = st.button(
-        "✦  Activer mes alertes AO personnalisées",
+        "✦  Soumettre",
         use_container_width=True
     )
 
