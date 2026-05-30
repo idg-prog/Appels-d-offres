@@ -402,23 +402,27 @@ st.markdown("""
 <div class="hero-title">
     Recevez vos Appels d'Offres<br><span>filtrés & automatisés.</span>
 </div>
-<div class="hero-sub">
-    Accédez aux marchés publics de <strong style="color:#e8e8f0">Marchespublics</strong> & <strong style="color:#e8e8f0">Tanmia</strong>, Chaque appel d’offres inclut :
 
-    <ul>
-      <li><strong style="color:#e8e8f0">Le nom du projet</strong></li>
-      <li><strong style="color:#e8e8f0">La date limite</strong></li>
-      <li><strong style="color:#e8e8f0">La localisation</strong></li>
-      <li><strong style="color:#e8e8f0">L’organisme émetteur</strong></li>
-      <li><strong style="color:#e8e8f0">Le budget estimé</strong></li>
-      <li><strong style="color:#e8e8f0">La caution</strong></li>
-      <li><strong style="color:#e8e8f0">Description du l'offre</strong></li>
-      <li><strong style="color:#e8e8f0">Lien direct</strong></li>
-    </ul>
+<div class="hero-sub">
+    Accédez aux marchés publics de <strong style="color:#e8e8f0">Marchespublics</strong> & 
+    <strong style="color:#e8e8f0">Tanmia</strong>. Chaque appel d’offres inclut :
+</div>
+
+<ul>
+  <li><strong style="color:#e8e8f0">Le nom du projet</strong></li>
+  <li><strong style="color:#e8e8f0">La date limite</strong></li>
+  <li><strong style="color:#e8e8f0">La localisation</strong></li>
+  <li><strong style="color:#e8e8f0">L’organisme émetteur</strong></li>
+  <li><strong style="color:#e8e8f0">Le budget estimé</strong></li>
+  <li><strong style="color:#e8e8f0">La caution</strong></li>
+  <li><strong style="color:#e8e8f0">Description de l’offre</strong></li>
+  <li><strong style="color:#e8e8f0">Lien direct</strong></li>
+</ul>
+
+<div class="hero-sub">
     En échange, aidez-nous à cartographier la maturité digitale des entreprises marocaines.
 </div>
 """, unsafe_allow_html=True)
-
 st.markdown("""
 <div class="stat-row">
     <div class="stat-item"><div class="stat-num">2 400+</div><div class="stat-label">AO publiés chaque mois</div></div>
