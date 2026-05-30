@@ -403,8 +403,7 @@ st.markdown("""
     Recevez vos Appels d'Offres<br><span>filtrés & automatisés.</span>
 </div>
 <div class="hero-sub">
-    Accédez aux marchés publics de <strong style="color:#e8e8f0">Marchespublics</strong>, <strong style="color:#e8e8f0">Tanmia</strong>, <strong style="color:#e8e8f0">CDG</strong>, 
-    <strong style="color:#e8e8f0">Bank Al-Maghrib</strong>, <strong style="color:#e8e8f0">ONCF</strong>, <strong style="color:#e8e8f0">RAM</strong>, <strong style="color:#e8e8f0">United Nations</strong>, ... 
+    Accédez aux marchés publics de <strong style="color:#e8e8f0">Marchespublics</strong>, <strong style="color:#e8e8f0">Tanmia</strong>
     <br>
     Chaque appel d’offres inclut :
     <ul>
