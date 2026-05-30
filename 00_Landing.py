@@ -425,9 +425,7 @@ st.markdown("""
 <strong style="color:#e8e8f0">
     CDG, Bank Al-Maghrib, CNSS, OFPPT, ONCF, OCP
 </strong>
-et d'autres grandes institutions publiques et privées.
-
-<br>
+et d'autres grandes institutions publiques et privées.<br>
 
 <div class="hero-sub">
     En échange, aidez-nous à cartographier la maturité digitale des entreprises marocaines.
