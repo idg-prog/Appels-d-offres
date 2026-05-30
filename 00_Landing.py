@@ -403,7 +403,7 @@ st.markdown("""
     Recevez vos Appels d'Offres<br><span>filtrés & automatisés.</span>
 </div>
 <div class="hero-sub">
-    Accédez aux marchés publics de <strong style="color:#e8e8f0">Marchespublics</strong>, <strong style="color:#e8e8f0">Tanmia</strong>
+    Accédez aux marchés publics de <strong style="color:#e8e8f0">Marchespublics</strong> & <strong style="color:#e8e8f0">Tanmia</strong>
     <br>
     Chaque appel d’offres inclut :
     <ul>
