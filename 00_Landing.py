@@ -427,7 +427,7 @@ st.markdown("""
 </strong>
 et d'autres grandes institutions publiques et privées.
 
-<br><br>
+<br>
 
 <div class="hero-sub">
     En échange, aidez-nous à cartographier la maturité digitale des entreprises marocaines.
