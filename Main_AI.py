@@ -95,7 +95,7 @@ def get_ai_extraction(text, retries=3):
     for attempt in range(retries):
         try:
             response = client.chat.completions.create(
-                model="minimax/minimax-m2.5:free",
+                model="openrouter/owl-alpha",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1 # Low temperature for more consistent formatting
             )
