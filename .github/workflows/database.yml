@@ -2,7 +2,7 @@ name: Clean Supabase Tables
 
 on:
   schedule:
-    - cron: '0 0 * * *'   # Every day at 00:00 UTC
+    - cron: '0 9 * * *'   # 10:00 AM Morocco time
   workflow_dispatch:
 
 jobs:
