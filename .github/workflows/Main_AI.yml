@@ -3,7 +3,7 @@ name: AI Extraction Pipeline
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 3 * * *'  # Runs daily at 04:00 AM UTC
+    - cron: '0 8 * * *'  # Runs daily at 04:00 AM UTC
 
 jobs:
   process:
