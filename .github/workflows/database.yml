@@ -1,12 +1,18 @@
 name: Clean Supabase Tables
 
 on:
-  schedule:
-    - cron: '0 9 * * *'   # 10:00 AM Morocco time
   workflow_dispatch:
+
+  workflow_run:
+    workflows:
+      - "AI Extraction Pipeline"
+    types:
+      - completed
 
 jobs:
   cleanup:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
     runs-on: ubuntu-latest
 
     steps:
