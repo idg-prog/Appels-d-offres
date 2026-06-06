@@ -11,13 +11,7 @@ jobs:
 
     steps:
       - name: Ping App 1
-        run: |
-          curl -L \
-            -A "Mozilla/5.0" \
-            https://appels-d-offres-dashbord.streamlit.app/
+        run: curl -I https://appels-d-offres-dashbord.streamlit.app/
 
       - name: Ping App 2
-        run: |
-          curl -L \
-            -A "Mozilla/5.0" \
-            https://appels-d-offres.streamlit.app/
+        run: curl -I https://appels-d-offres.streamlit.app/
