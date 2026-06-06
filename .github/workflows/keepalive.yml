@@ -2,7 +2,7 @@ name: Keep Streamlit Apps Alive
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "*/20 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -11,7 +11,13 @@ jobs:
 
     steps:
       - name: Ping App 1
-        run: curl -I https://appels-d-offres-dashbord.streamlit.app/
+        run: |
+          curl -L \
+            -A "Mozilla/5.0" \
+            https://appels-d-offres-dashbord.streamlit.app/
 
       - name: Ping App 2
-        run: curl -I https://appels-d-offres.streamlit.app/
+        run: |
+          curl -L \
+            -A "Mozilla/5.0" \
+            https://appels-d-offres.streamlit.app/
