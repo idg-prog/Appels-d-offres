@@ -60,6 +60,9 @@ st.markdown("""
 # ============================================
 # 3. TRAITEMENT DES DONNÉES
 # ============================================
+# ============================================
+# 3. TRAITEMENT DES DONNÉES
+# ============================================
 def clean_date_series(s):
     s = s.astype(str).str.lower()
     s = s.str.replace('juin', 'june').str.replace('mai', 'may')
@@ -70,7 +73,10 @@ def clean_date_series(s):
 def get_data():
     try:
         client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_SERVICE_KEY"])
-        response = client.table("Tenders Clean Data").select("*").execute()
+        
+        # FIX: Added .limit(5000) to override the default 1000 row cap
+        response = client.table("Tenders Clean Data").select("*").limit(5000).execute()
+        
         df = pd.DataFrame(response.data)
         
         if df.empty: return df
