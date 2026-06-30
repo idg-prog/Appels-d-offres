@@ -70,21 +70,37 @@ def clean_date_series(s):
     return pd.to_datetime(s, errors='coerce', dayfirst=True).dt.date
 
 @st.cache_data(ttl=600)
+@st.cache_data(ttl=600)
 def get_data():
     try:
         client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_SERVICE_KEY"])
-        
-        # FIX: Added .limit(5000) to override the default 1000 row cap
-        response = client.table("Tenders Clean Data").select("*").limit(5000).execute()
-        
-        df = pd.DataFrame(response.data)
-        
+
+        # Supabase/PostgREST caps each request at 1000 rows by default,
+        # so we paginate with .range() until no more rows come back.
+        all_rows = []
+        page_size = 1000
+        start = 0
+        while True:
+            response = (
+                client.table("Tenders Clean Data")
+                .select("*")
+                .range(start, start + page_size - 1)
+                .execute()
+            )
+            batch = response.data
+            all_rows.extend(batch)
+            if len(batch) < page_size:
+                break
+            start += page_size
+
+        df = pd.DataFrame(all_rows)
+
         if df.empty: return df
 
         # === NEW: CLEANING EMPTY ROWS ===
         # 1. Remove rows where the 'Title' column is missing (NaN)
         df = df.dropna(subset=['Title', 'Client'], how='all')
-        
+
         # 2. Remove rows where the 'Title' is literally the string "EMPTY" or just whitespace
         df = df[df['Title'].astype(str).str.strip().str.upper() != "EMPTY"]
         df = df[df['Title'].astype(str).str.strip() != ""]
@@ -98,6 +114,7 @@ def get_data():
     except Exception as e:
         st.error(f"Erreur Supabase : {e}")
         return pd.DataFrame()
+    
         
 df_raw = get_data()
 # Sort by publication date (newest first)
