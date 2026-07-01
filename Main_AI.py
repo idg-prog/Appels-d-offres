@@ -95,7 +95,7 @@ def get_ai_extraction(text, retries=3):
     for attempt in range(retries):
         try:
             response = client.chat.completions.create(
-                model="openrouter/owl-alpha",
+                model="google/gemma-4-31b-it:free",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1 # Low temperature for more consistent formatting
             )
